@@ -1,0 +1,14 @@
+{
+  "owner": "Ada",
+  "timezone": "Europe/Prague",
+  "github_repo": "dam-agents/dam",
+  "slack": {
+    "user_id": "U0123456789",
+    "workspace_url": "https://acme.slack.com"
+  },
+  "meetings": {
+    "source": "Brainio",
+    "url_template": "https://brain.example.com/?recording={id}"
+  },
+  "port": 5555
+}

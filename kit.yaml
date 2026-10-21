@@ -1,0 +1,80 @@
+# kit.yaml — the DAM Starter Kit for Workstream Assistant.
+#
+# This repository IS the kit: the platform reads this file out of git, creates the
+# agent from it, seeds this repository into the agent's work directory, and opens
+# the first session on ONBOARDING.md.
+#
+# No `onboarding` field, deliberately: absent means the platform composes the
+# briefing from the live agent state and ends it with "follow ONBOARDING.md", which
+# keeps the onboarding gate, its progress tools and the hold on schedules.
+
+schemaVersion: v1
+id: workstream-assistant
+name: Workstream Assistant
+tagline: Helps you deliver every workstream's goal, day by day.
+description: >-
+  Follows the workstreams you drive, each with a goal and an owner, and helps you
+  deliver them. It reads GitHub, Slack and meeting transcripts and turns them into
+  a live Workstreams app: each workstream's status, TL;DR and progress, the asks
+  that need you, and the follow-ups waiting on someone else. It suggests new
+  workstreams for you to approve or reject, and closes asks and follow-ups by
+  itself when GitHub shows they're done. Three weekday schedules keep it current:
+  an hourly Slack sweep, a meeting sweep every two hours, and a done-check run
+  every 20 minutes that only wakes the agent when something has finished. It never
+  posts, comments or changes anything outside its own sandbox without asking.
+category: productivity
+icon: target
+docsUrl: https://github.com/dam-agents/workstream-assistant/blob/main/README.md
+
+seed:
+  self: true
+  into: work
+
+harnesses: [claude-code]
+
+connections:
+  - accepts: [github, github-enterprise]
+    required: true
+    note: Reads issues, PRs, tags and releases, and runs the done checks that close asks and follow-ups.
+  - accepts: [slack]
+    required: false
+    note: >-
+      The main source: your messages, mentions of you, and the channels you watch.
+      Connect it as your own Slack user, so the agent can search what you can see.
+  - accepts: [mcp-server]
+    required: false
+    note: >-
+      A meeting-transcript MCP server (for example Brainio). Without it the meeting
+      sweep is skipped.
+
+schedules:
+  - name: "Workstream Assistant: Slack sweep"
+    description: Reads new Slack activity every weekday hour and updates workstreams, asks and follow-ups.
+    rrule: FREQ=HOURLY;BYDAY=MO,TU,WE,TH,FR;BYHOUR=8,9,10,11,12,13,14,15,16,17,18;BYMINUTE=7
+    timezone: Europe/Prague
+    sessionMode: fresh
+    precheck: python3 /home/agent/work/app/sweep.py ensure-server >&2; python3 /home/agent/work/app/sweep.py state slack
+    task: >-
+      Workstream Assistant: Slack sweep. Read /home/agent/work/AGENTS.md, then follow
+      /home/agent/work/procedures/slack-sweep.md exactly. The precheck output below is
+      the input it refers to.
+  - name: "Workstream Assistant: meeting sweep"
+    description: Reads new meeting transcripts every two hours on weekdays and updates the workstreams they touch.
+    rrule: FREQ=HOURLY;INTERVAL=2;BYDAY=MO,TU,WE,TH,FR;BYHOUR=9,11,13,15,17,19;BYMINUTE=37
+    timezone: Europe/Prague
+    sessionMode: fresh
+    precheck: python3 /home/agent/work/app/sweep.py ensure-server >&2; python3 /home/agent/work/app/sweep.py state meetings
+    task: >-
+      Workstream Assistant: meeting sweep. Read /home/agent/work/AGENTS.md, then follow
+      /home/agent/work/procedures/meeting-sweep.md exactly. The precheck output below is
+      the input it refers to.
+  - name: "Workstream Assistant: close finished items"
+    description: Every 20 minutes on weekdays, closes asks and follow-ups whose done check passes; idle runs cost nothing.
+    rrule: FREQ=MINUTELY;INTERVAL=20;BYDAY=MO,TU,WE,TH,FR;BYHOUR=8,9,10,11,12,13,14,15,16,17,18,19,20
+    timezone: Europe/Prague
+    sessionMode: fresh
+    precheck: python3 /home/agent/work/app/checks.py precheck
+    task: >-
+      Workstream Assistant: close finished items. Read /home/agent/work/AGENTS.md, then
+      follow /home/agent/work/procedures/close-finished.md exactly. The precheck output
+      below lists the items whose done check passes.

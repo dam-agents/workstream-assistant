@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Workstreams</title>
+<style>
+  :root {
+    --bg:#fff; --surface:#f6f7f9; --raise:#fff; --border:#e3e6ea; --text:#1b1f24; --muted:#5b6470;
+    --red:#c62f2f; --red-bg:#fdecec; --amber:#a86500; --amber-bg:#fff4e0; --green:#1f7a3d; --green-bg:#e8f5ec;
+    --blue:#2457c5; --blue-bg:#e9effc; --grey-bg:#eef0f3; --s1:#2457c5; --s2:#9aa3ae;
+  }
+  @media (prefers-color-scheme: dark) { :root {
+    --bg:#14171b; --surface:#1c2026; --raise:#20252c; --border:#2c323a; --text:#e6e9ed; --muted:#9aa3ae;
+    --red:#ff7b7b; --red-bg:#3a1c1e; --amber:#f2b45a; --amber-bg:#372a14; --green:#6fd08f; --green-bg:#16301f;
+    --blue:#8fb1ff; --blue-bg:#1b2640; --grey-bg:#262b32; --s1:#8fb1ff; --s2:#5b6470;
+  } }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; }
+  a { color:var(--blue); text-decoration:none; } a:hover { text-decoration:underline; }
+  .wrap { max-width:1120px; margin:0 auto; padding:20px 24px 64px; }
+  header.top { display:flex; align-items:center; gap:12px; flex-wrap:wrap; padding-bottom:14px; border-bottom:1px solid var(--border); }
+  header.top h1 { font-size:20px; margin:0; letter-spacing:-.01em; cursor:pointer; }
+  .crumb { color:var(--muted); }
+  .spacer { flex:1; }
+  .conn { font-size:12px; color:var(--muted); display:flex; align-items:center; gap:6px; }
+  .dot { width:8px; height:8px; border-radius:50%; background:var(--s2); }
+  .dot.live { background:var(--green); } .dot.off { background:var(--amber); }
+  button { font:inherit; font-size:13px; border:1px solid var(--border); background:var(--raise); color:var(--text);
+    border-radius:7px; padding:5px 11px; cursor:pointer; }
+  button:hover { border-color:var(--muted); }
+  button.primary { background:var(--blue); border-color:var(--blue); color:#fff; }
+  button:disabled { opacity:.5; cursor:default; }
+  .banner { margin:14px 0 0; padding:10px 14px; border-radius:8px; font-size:13px; display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+  .banner.warn { background:var(--amber-bg); color:var(--amber); }
+  .banner.err { background:var(--red-bg); color:var(--red); }
+  h2 { font-size:15px; margin:30px 0 10px; display:flex; align-items:baseline; gap:8px; }
+  h2 .c { color:var(--muted); font-weight:400; font-size:13px; }
+  .muted { color:var(--muted); }
+  .kpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px; margin-top:18px; }
+  .kpi { border:1px solid var(--border); border-radius:10px; padding:12px 14px; background:var(--surface); }
+  .kpi .n { font-size:26px; font-weight:650; line-height:1.1; font-variant-numeric:tabular-nums; }
+  .kpi .l { color:var(--muted); font-size:12.5px; margin-top:3px; }
+  .kpi.bad .n { color:var(--red); } .kpi.warn .n { color:var(--amber); }
+  .cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:14px; }
+  .card { border:1px solid var(--border); border-radius:10px; padding:14px 16px; background:var(--surface); }
+  .ws-card { cursor:pointer; display:flex; flex-direction:column; gap:8px; }
+  .ws-card:hover { border-color:var(--muted); }
+  .ref { font:600 11px/1 ui-monospace, SFMono-Regular, Menlo, monospace; color:var(--muted, #6b7280); border:1px solid currentColor; border-radius:4px; padding:2px 4px; margin-right:6px; vertical-align:2px; opacity:.8; }
+  .ws-card .name { font-weight:650; font-size:15px; display:flex; align-items:center; gap:8px; }
+  .ws-card .goal { color:var(--muted); font-size:13px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .stats { display:flex; gap:14px; font-size:12.5px; color:var(--muted); flex-wrap:wrap; }
+  .stats b { color:var(--text); font-variant-numeric:tabular-nums; }
+  .stats b.r { color:var(--red); } .stats b.a { color:var(--amber); }
+  .pill { display:inline-block; font-size:11.5px; font-weight:600; padding:2px 8px; border-radius:999px; white-space:nowrap; }
+  .p-red { color:var(--red); background:var(--red-bg); } .p-amber { color:var(--amber); background:var(--amber-bg); }
+  .p-green { color:var(--green); background:var(--green-bg); } .p-grey { color:var(--muted); background:var(--grey-bg); }
+  .p-blue { color:var(--blue); background:var(--blue-bg); }
+  table { width:100%; border-collapse:collapse; font-size:13.5px; }
+  th { text-align:left; font-weight:600; color:var(--muted); font-size:11.5px; text-transform:uppercase; letter-spacing:.04em;
+    padding:7px 10px; border-bottom:1px solid var(--border); }
+  td { padding:9px 10px; border-bottom:1px solid var(--border); vertical-align:top; }
+  td.num { text-align:right; font-variant-numeric:tabular-nums; }
+  td .d { color:var(--muted); font-size:12.5px; margin-top:2px; }
+  .owner { font-weight:600; white-space:nowrap; }
+  select.st { font:inherit; font-size:12px; border:1px solid var(--border); border-radius:6px; padding:2px 4px; background:var(--raise); color:var(--text); }
+  tr.done td { opacity:.55; } tr.done .ttl { text-decoration:line-through; }
+  .meta { display:grid; grid-template-columns:max-content 1fr; gap:6px 16px; margin-top:16px; }
+  .meta dt { color:var(--muted); } .meta dd { margin:0; }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  @media (max-width:780px) { .grid2 { grid-template-columns:1fr; } }
+  .card ul { margin:0; padding-left:18px; } .card li { margin:5px 0; }
+  .card h3 { margin:0 0 8px; font-size:13.5px; }
+  .tl { border-left:2px solid var(--border); margin-left:6px; padding-left:18px; }
+  .day { font-weight:650; margin:16px 0 6px; position:relative; }
+  .day::before { content:""; position:absolute; left:-25px; top:6px; width:10px; height:10px; border-radius:50%; background:var(--bg); border:2px solid var(--muted); }
+  .ev { margin:6px 0; display:grid; grid-template-columns:46px 74px 1fr; gap:10px; align-items:start; }
+  .ev .t { color:var(--muted); font-variant-numeric:tabular-nums; font-size:12.5px; padding-top:1px; }
+  .feed .ev { grid-template-columns:110px 74px 1fr; }
+  .tabs { display:flex; gap:4px; margin-top:22px; border-bottom:1px solid var(--border); }
+  .tab { padding:7px 12px; cursor:pointer; color:var(--muted); border-bottom:2px solid transparent; margin-bottom:-1px; font-weight:500; }
+  .tab.on { color:var(--text); border-bottom-color:var(--blue); }
+  form.add { display:grid; grid-template-columns:110px 1fr 120px auto; gap:8px; margin-top:10px; }
+  form.add input { font:inherit; font-size:13px; padding:5px 8px; border:1px solid var(--border); border-radius:6px; background:var(--raise); color:var(--text); }
+  .bar { height:6px; border-radius:3px; background:var(--grey-bg); overflow:hidden; display:flex; }
+  .bar span { display:block; height:100%; }
+  .empty { color:var(--muted); padding:18px 0; }
+  .spark { display:block; }
+  .loading { padding:60px 0; text-align:center; color:var(--muted); }
+  .ws-list { margin-top:18px; border:1px solid var(--border); border-radius:10px; overflow:hidden; }
+  .ws-row { display:grid; grid-template-columns:90px 1fr auto auto; gap:16px; align-items:center; padding:14px 16px;
+    border-bottom:1px solid var(--border); cursor:pointer; background:var(--surface); }
+  .ws-row:last-child { border-bottom:0; }
+  .ws-row:hover { background:var(--raise); }
+  .ar-name { font-weight:650; font-size:15px; }
+  .ar-note { color:var(--muted); font-size:13px; margin-top:2px; }
+  .ar-meta { color:var(--muted); font-size:12.5px; white-space:nowrap; }
+  .ar-open { font-weight:600; white-space:nowrap; }
+  @media (max-width:640px) { .ws-row { grid-template-columns:1fr; gap:6px; } }
+  .ad-head { margin-top:18px; }
+  .ad-title { font-size:19px; font-weight:650; display:flex; align-items:center; gap:10px; }
+  .tldr { margin-top:14px; padding:12px 16px; border-left:4px solid var(--blue); background:var(--blue-bg); border-radius:8px; font-size:14.5px; }
+  .tldr .lbl { font-size:11px; font-weight:700; letter-spacing:.06em; color:var(--blue); margin-bottom:2px; }
+  ul.points { margin:0; padding-left:20px; } ul.points li { margin:5px 0; }
+  details.more { margin-top:28px; border-top:1px solid var(--border); padding-top:12px; color:var(--muted); }
+  details.more summary { cursor:pointer; font-weight:600; }
+  details.more ul { padding-left:20px; } details.more li { margin:3px 0; }
+  .sg-list { border:1px dashed var(--amber); border-radius:10px; overflow:hidden; }
+  .sg { display:grid; grid-template-columns:1fr auto; gap:8px 16px; padding:14px 16px; border-bottom:1px dashed var(--border); background:var(--amber-bg); }
+  .sg:last-child { border-bottom:0; }
+  .sg-actions { display:flex; gap:8px; align-items:center; white-space:nowrap; }
+  .sg-reject { grid-column:1 / -1; display:flex; gap:8px; }
+  .sg-reject input { flex:1; font:inherit; font-size:13px; padding:5px 8px; border:1px solid var(--border); border-radius:6px; background:var(--raise); color:var(--text); }
+  .sg-reject[hidden] { display:none; }
+  .sg .ar-note { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  button.danger { background:var(--red); border-color:var(--red); color:#fff; }
+  @media (max-width:640px) { .sg { grid-template-columns:1fr; } }
+  .p-needs { color:#fff; background:#7c3aed; }
+  @media (prefers-color-scheme: dark) { .p-needs { background:#8b5cf6; } }
+  .ws-row.needs { box-shadow: inset 4px 0 0 #7c3aed; }
+  .ar-status { display:flex; flex-direction:column; gap:4px; align-items:flex-start; }
+  .ws-row { grid-template-columns:130px 1fr auto auto; }
+  .needs-line { margin-top:16px; color:#7c3aed; font-size:14px; }
+  .needs-box { margin-top:14px; padding:12px 16px; border:1px solid #7c3aed; border-left-width:4px; border-radius:8px; }
+  .needs-box .lbl { font-size:11px; font-weight:700; letter-spacing:.06em; color:#7c3aed; margin-bottom:4px; text-transform:uppercase; }
+  .ask { display:flex; gap:12px; align-items:center; padding:7px 0; border-top:1px solid var(--border); }
+  .ask:first-of-type { border-top:0; }
+  .ask-main { flex:1; }
+  .ask-src { color:var(--muted); font-size:12px; margin-top:1px; }
+  .sm-list { border:1px solid var(--border); border-radius:10px; padding:2px 14px; }
+  .sm { display:flex; gap:12px; align-items:center; padding:9px 0; border-top:1px solid var(--border); }
+  .sm:first-child { border-top:0; }
+  .sm-main { flex:1; }
+  .sm.mine .sm-main > div:first-child { font-weight:600; }
+  a.item-link { color:var(--text); text-decoration:underline; text-decoration-color:var(--border); text-underline-offset:3px; }
+  a.item-link:hover { color:var(--blue); text-decoration-color:var(--blue); }
+  .src-tag { font-size:11px; color:var(--blue); white-space:nowrap; }
+  .src-tag.missing { color:var(--amber); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1 id="home">Workstreams</h1>
+    <span class="crumb" id="crumb"></span>
+    <span class="spacer"></span>
+    <span class="conn"><span class="dot" id="dot"></span><span id="connText">Connecting…</span></span>
+    <button id="reload">Reload</button>
+    <button id="ask">Ask agent to refresh</button>
+  </header>
+  <div id="banner"></div>
+  <main id="view"><div class="loading">Loading…</div></main>
+</div>
+
+<script id="snapshot" type="application/json">__SNAPSHOT__</script>
+<script>
+const SNAP = JSON.parse(document.getElementById('snapshot').textContent);
+const STATUS = {
+  todo: ['To do', 'p-grey'], in_progress: ['In progress', 'p-blue'], blocked: ['Blocked', 'p-red'],
+  done: ['Done', 'p-green'], unknown: ['Unknown', 'p-grey'],
+};
+const WS_STATUS = { red: ['At risk', 'p-red'], amber: ['Watch', 'p-amber'], green: ['On track', 'p-green'] };
+const OUTCOME = {
+  pass: ['Passed', 'p-green'], done: ['Done', 'p-green'], fail: ['Failed', 'p-red'], blocked: ['Blocked', 'p-red'],
+  risk: ['Risk', 'p-amber'], info: ['', ''],
+};
+const TYPE = { pr: 'PR', ticket: 'Ticket', meeting: 'Meeting', message: 'Message', doc: 'Doc', release: 'Release', update: 'Update' };
+
+let live = false;
+let route = { view: 'dash' };
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const pill = ([label, cls]) => label ? `<span class="pill ${cls}">${esc(label)}</span>` : '';
+const link = (label, url) => url ? `<a href="${esc(url)}" target="_blank" rel="noopener">${esc(label)}</a>` : esc(label);
+const fmtDay = (ts) => new Date(ts).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+const fmtTime = (ts) => ts.slice(11, 16);
+const ago = (ts) => {
+  if (!ts) return 'never';
+  const h = (Date.now() - new Date(ts)) / 36e5;
+  if (h < 1) return 'just now';
+  if (h < 24) return `${Math.round(h)}h ago`;
+  return `${Math.round(h / 24)}d ago`;
+};
+
+function hasPlatform() { return typeof platform !== 'undefined' && platform && typeof platform.request === 'function'; }
+
+async function api(method, path, body) {
+  if (!hasPlatform()) throw Object.assign(new Error('no platform'), { reason: 'no-platform' });
+  const res = await platform.request({ method, path, ...(body ? { body: JSON.stringify(body) } : {}) });
+  let data = null;
+  try { data = JSON.parse(res.body); } catch { /* non-JSON */ }
+  if (res.status >= 400) throw Object.assign(new Error((data && data.error) || `HTTP ${res.status}`), { reason: 'http' });
+  return data;
+}
+
+function setConn(state, text) {
+  $('dot').className = 'dot ' + (state === 'live' ? 'live' : state === 'off' ? 'off' : '');
+  $('connText').textContent = text;
+}
+
+function showBanner(kind, html) {
+  $('banner').innerHTML = html ? `<div class="banner ${kind}">${html}</div>` : '';
+  const r = $('retry'); if (r) r.onclick = () => load();
+}
+
+function offlineMessage(err) {
+  const r = err && err.reason;
+  if (r === 'app-not-listening') return 'The server isn\'t running. Ask the agent to start it, then retry.';
+  if (r === 'timeout') return 'The agent didn\'t answer in time (it may be waking up).';
+  if (r === 'no-platform') return 'Live data works only in the docked preview beside the chat.';
+  return `Couldn't reach the server: ${esc(err && err.message)}`;
+}
+
+async function load() {
+  lastLoad = Date.now();
+  setConn('', 'Loading…');
+  try {
+    const data = route.view === 'ws' ? await api('GET', `/api/workstreams/${route.id}`) : await api('GET', '/api/summary');
+    live = true;
+    setConn('live', 'Live');
+    showBanner('', '');
+    render(data);
+  } catch (err) {
+    live = false;
+    setConn('off', 'Snapshot');
+    showBanner('warn', `${offlineMessage(err)} Showing the snapshot from ${esc(new Date(SNAP.summary.generated_at).toLocaleString('en-GB'))}. <button id="retry">Retry</button>`);
+    render(route.view === 'ws' ? SNAP.workstreams[route.id] : SNAP.summary);
+  }
+}
+
+function go(r) { route = r; window.scrollTo(0, 0); $('view').innerHTML = '<div class="loading">Loading…</div>'; load(); }
+
+function render(data) {
+  if (!data) { $('view').innerHTML = '<div class="empty">Nothing here.</div>'; return; }
+  if (route.view === 'ws') renderWorkstream(data); else renderDash(data);
+}
+
+const refTag = (a) => a.ref ? `<span class="ref" title="Use this to refer to the workstream in chat">W${a.ref}</span>` : '';
+
+/* ---------- dashboard ---------- */
+function renderDash(s) {
+  $('crumb').textContent = '';
+  const list = s.workstreams || [];
+  const order = { red: 0, amber: 1, green: 2 };
+  const rows = [...list].sort((a, b) => (b.asks_open > 0) - (a.asks_open > 0) || order[a.status] - order[b.status] || a.name.localeCompare(b.name)).map((a) => `
+    <div class="ws-row ${a.asks_open ? 'needs' : ''}" data-ws="${esc(a.id)}">
+      <div class="ar-status">${a.asks_open ? `<span class="pill p-needs">Needs you · ${a.asks_open}</span>` : ''}${pill(WS_STATUS[a.status])}</div>
+      <div class="ar-main">
+        <div class="ar-name">${refTag(a)}${esc(a.name)}</div>
+        <div class="ar-note">${esc(a.status_note)}</div>
+      </div>
+      <div class="ar-meta">${esc(a.owner)} · ${esc(ago(a.last_activity))}${a.followups_open ? ` · ${a.followups_open} follow-up${a.followups_open > 1 ? 's' : ''}` : ''}</div>
+      <a href="#" class="ar-open">Detail →</a>
+    </div>`).join('');
+  const sugg = (s.suggested || []).map((a) => `
+    <div class="sg" data-sid="${esc(a.id)}">
+      <div class="sg-main">
+        <div class="ar-name">${refTag(a)}${esc(a.name)} ${a.asks_open ? `<span class="pill p-needs">Needs you · ${a.asks_open}</span>` : ''} ${pill(WS_STATUS[a.status])}</div>
+        <div class="ar-note">${esc(a.tldr || a.goal)}</div>
+        <div class="ar-meta" style="margin-top:4px">Owner: ${esc(a.owner)}</div>
+      </div>
+      <div class="sg-actions">
+        <a href="#" data-ws="${esc(a.id)}">Preview</a>
+        <button class="primary" data-approve="${esc(a.id)}" ${live ? '' : 'disabled'}>Approve</button>
+        <button data-reject="${esc(a.id)}" ${live ? '' : 'disabled'}>Reject</button>
+      </div>
+      <div class="sg-reject" data-rform="${esc(a.id)}" hidden>
+        <input name="reason" placeholder="Why not? (optional, helps the agent avoid similar suggestions)">
+        <button type="button" class="danger">Reject</button><button type="button" data-cancel>Cancel</button>
+      </div>
+    </div>`).join('');
+  const loose = s.followups || [];
+  const looseMine = loose.filter((x) => x.waiting_on === s.me).length;
+  const needN = list.reduce((n, a) => n + a.asks_open, 0) + looseMine, needA = list.filter((a) => a.asks_open).length;
+  const needLine = needN ? `<div class="needs-line"><b>${needN} thing${needN > 1 ? 's' : ''} need${needN > 1 ? '' : 's'} you</b> in ${needA} workstream${needA > 1 ? 's' : ''}</div>` : '';
+  $('view').innerHTML = needLine +
+    (rows ? `<div class="ws-list">${rows}</div>` : '<div class="empty">No workstreams yet. Ask the agent to suggest some.</div>') +
+    `<h2>Follow-ups <span class="c">${loose.length ? loose.length + ' not tied to a workstream' : 'none outside workstreams'}</span></h2>` +
+    (loose.length ? `<div class="sm-list">${loose.map(followupRow).join('')}</div>` : '<div class="empty" style="padding:4px 0">Quick open loops you start on Slack or in meetings show up here. Ones that belong to a workstream are shown in that workstream.</div>') +
+    (sugg ? `<h2>Suggested workstreams <span class="c">${s.suggested.length} waiting for your approval</span></h2><div class="sg-list">${sugg}</div>` : '');
+  bindSuggestions();
+  bindFollowups();
+  bindWorkstreamLinks();
+}
+
+function bindSuggestions() {
+  const act = async (path, body, el) => {
+    el.disabled = true;
+    try { await api('POST', path, body); await load(); }
+    catch (err) { showBanner('err', `Couldn't save: ${esc(err.message)}`); el.disabled = false; }
+  };
+  document.querySelectorAll('[data-approve]').forEach((b) => b.onclick = () => act(`/api/workstreams/${b.dataset.approve}/approve`, null, b));
+  document.querySelectorAll('[data-reject]').forEach((b) => b.onclick = () => {
+    const f = document.querySelector(`[data-rform="${b.dataset.reject}"]`); f.hidden = false; f.querySelector('input').focus();
+  });
+  document.querySelectorAll('.sg-reject').forEach((f) => {
+    const input = f.querySelector('input'), submit = f.querySelector('.danger');
+    const send = () => act(`/api/workstreams/${f.dataset.rform}/reject`, { reason: input.value }, submit);
+    f.querySelector('[data-cancel]').onclick = () => { f.hidden = true; };
+    submit.onclick = send;
+    input.onkeydown = (ev) => { if (ev.key === 'Enter') { ev.preventDefault(); send(); } };
+  });
+}
+
+function bindWorkstreamLinks() {
+  document.querySelectorAll('[data-ws]').forEach((el) => el.addEventListener('click', (ev) => {
+    if (ev.target.closest('a[href^="http"]')) return;
+    ev.preventDefault(); go({ view: 'ws', id: el.dataset.ws });
+  }));
+}
+
+/* ---------- workstream ---------- */
+const REPO = (SNAP.summary && SNAP.summary.github_repo) || '';
+const linkify = (text) => !REPO ? esc(text) : esc(text).replace(/(PR )?#(\d{3,5})/g, (m, pr, n) =>
+  `<a href="https://github.com/${REPO}/${pr ? 'pull' : 'issues'}/${n}" target="_blank" rel="noopener">${m}</a>`);
+
+const srcIcon = (u) => !u ? '' : u.includes('slack.com') ? 'Slack' : u.includes('github.com') ? 'GitHub' : /recording|meeting/i.test(u) ? 'Meeting' : u.includes('claude.ai') ? 'Doc' : 'Link';
+const itemText = (text, url) => url
+  ? `<a class="item-link" href="${esc(url)}" target="_blank" rel="noopener">${esc(text)}</a> <span class="src-tag">${srcIcon(url)} ↗</span>`
+  : `${linkify(text)} <span class="src-tag missing" title="No link to the source yet">no link</span>`;
+
+function followupRow(sm) {
+  const mine = !!sm.waiting_on && sm.waiting_on === SNAP.summary.me;
+  return `<div class="sm ${mine ? 'mine' : ''}"><div class="sm-main"><div>${itemText(sm.text, sm.url)}</div>
+    <div class="ask-src">${sm.waiting_on ? `<span class="pill ${mine ? 'p-needs' : 'p-grey'}">${mine ? 'Waiting on you' : 'Waiting on ' + esc(sm.waiting_on)}</span> ` : ''}${sm.next_step ? `Next: ${esc(sm.next_step)} · ` : ''}${esc(sm.source)} · ${esc(ago(sm.ts))}</div></div>
+    ${live ? `<button class="ask-done sm-done" data-followup="${sm.id}">Done</button>` : ''}</div>`;
+}
+
+function bindFollowups() {
+  document.querySelectorAll('.sm-done').forEach((b) => b.onclick = async () => {
+    b.disabled = true;
+    try { await api('POST', `/api/followups/${b.dataset.followup}/done`); await load(); }
+    catch (e) { showBanner('err', `Couldn't save: ${esc(e.message)}`); b.disabled = false; }
+  });
+}
+
+function renderWorkstream(a) {
+  $('crumb').textContent = '› ' + (a.ref ? `W${a.ref} · ` : '') + a.name;
+  const points = (a.key_points || '').split('\n').filter(Boolean)
+    .map((p) => { const [h, ...rest] = p.split(': '); return rest.length && h.length < 20
+      ? `<li><b>${esc(h)}:</b> ${linkify(rest.join(': '))}</li>` : `<li>${linkify(p)}</li>`; }).join('');
+  const decisions = a.notes.filter((n) => n.kind === 'decision').map((n) => `<li>${esc(n.text)}</li>`).join('');
+
+  let days = '', lastDay = '';
+  for (const e of [...a.progress].reverse()) {
+    const d = fmtDay(e.ts);
+    if (d !== lastDay) { days += `<div class="day">${esc(d)}</div>`; lastDay = d; }
+    days += `<div class="ev"><div class="t">${esc(fmtTime(e.ts))}</div><div>${pill(OUTCOME[e.outcome]) || `<span class="muted" style="font-size:12px">${esc(TYPE[e.type] || e.type)}</span>`}</div><div>${e.url ? link(e.summary, e.url) : esc(e.summary)}</div></div>`;
+  }
+
+  const draft = a.state === 'suggested' ? `<div class="banner warn" style="margin-top:16px">Suggested workstream, waiting for your approval.
+      <button class="primary" id="dApprove" ${live ? '' : 'disabled'}>Approve</button>
+      <button id="dReject" ${live ? '' : 'disabled'}>Reject</button></div>` : '';
+  $('view').innerHTML = draft + `
+    <div class="ad-head">
+      <div class="ad-title">${refTag(a)}${esc(a.name)} ${pill(WS_STATUS[a.status])}</div>
+      <div class="muted">${esc(a.owner)}${a.epic_url ? ` · ${link(a.epic_label.split(' ')[0], a.epic_url)}` : ''} · updated ${esc(ago(a.updated_at))}</div>
+    </div>
+    ${(a.asks || []).length ? `<div class="needs-box"><div class="lbl">Needs you · ${a.asks.length}</div>
+      ${a.asks.map((k) => `<div class="ask"><div class="ask-main"><div>${itemText(k.text, k.url)}</div>
+        <div class="ask-src">${esc(k.asked_by)}${k.source ? ` · ${esc(k.source)}` : ''} · ${esc(ago(k.ts))}</div></div>
+        ${live ? `<button class="ask-done" data-ask="${k.id}">Done</button>` : ''}</div>`).join('')}</div>` : ''}
+    <div class="tldr"><div class="lbl">TL;DR</div>${esc(a.tldr || a.status_note)}</div>
+    ${points ? `<h2>Key points</h2><ul class="points">${points}</ul>` : ''}
+    ${(a.followups || []).length ? `<h2>Follow-ups <span class="c">${a.followups.length}</span></h2><div class="sm-list">${a.followups.map(followupRow).join('')}</div>` : ''}
+    <h2>Progress <span class="c">${a.progress.length}</span></h2>
+    <div class="tl">${days || '<div class="empty">No progress recorded yet.</div>'}</div>
+    <details class="more"><summary>Goal and decisions</summary>
+      <p><b>Goal:</b> ${esc(a.goal)}</p>
+      ${decisions ? `<ul>${decisions}</ul>` : ''}
+    </details>`;
+  bindFollowups();
+  document.querySelectorAll('.ask-done:not(.sm-done)').forEach((b) => b.onclick = async () => {
+    b.disabled = true;
+    try { await api('POST', `/api/asks/${b.dataset.ask}/done`); await load(); }
+    catch (e) { showBanner('err', `Couldn't save: ${esc(e.message)}`); b.disabled = false; }
+  });
+  const ap = $('dApprove'), rj = $('dReject');
+  if (ap) ap.onclick = async () => { ap.disabled = true; try { await api('POST', `/api/workstreams/${a.id}/approve`); load(); } catch (e) { showBanner('err', esc(e.message)); } };
+  if (rj) rj.onclick = () => go({ view: 'dash' });
+}
+
+$('home').onclick = () => go({ view: 'dash' });
+$('reload').onclick = () => load();
+$('ask').onclick = () => {
+  const where = route.view === 'ws' ? `workstream "${route.id}"` : 'all workstreams';
+  if (typeof platform !== 'undefined' && platform.sendPrompt) {
+    platform.sendPrompt(`Refresh ${where} in the Workstreams app: sweep the sources since the last update, add new progress, close finished asks and follow-ups, and tell me what changed.`);
+  } else {
+    showBanner('warn', 'Prompt buttons work only in the docked preview beside the chat.');
+  }
+};
+let lastLoad = 0;
+window.addEventListener('focus', () => {
+  const editing = document.querySelector('.sg-reject:not([hidden])') || document.activeElement?.tagName === 'INPUT';
+  if (live && !editing && Date.now() - lastLoad > 30000) load();
+});
+load();
+</script>
+</body>
+</html>

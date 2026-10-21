@@ -1,0 +1,6 @@
+# Instance state: this agent's own, never part of the kit
+config.json
+data/
+app/app.html
+__pycache__/
+*.pyc
