@@ -35,7 +35,10 @@ harnesses: [claude-code]
 connections:
   - accepts: [github, github-enterprise]
     required: true
-    note: Reads issues, PRs, tags and releases, and runs the done checks that close asks and follow-ups.
+    note: >-
+      Reads issues, PRs, tags and releases, and runs the done checks that close asks
+      and follow-ups. With write access it can also do work for you, such as a comment
+      or the release notes, but only when you ask.
   - accepts: [slack]
     required: false
     note: >-
