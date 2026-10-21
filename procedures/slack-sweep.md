@@ -13,6 +13,7 @@ Run by the schedule **Workstream Assistant: Slack sweep**. The precheck output (
    - progress for approved and suggested workstreams (`add_progress`)
    - asks for anything that needs the owner (`add_ask`), and follow-ups from their short requests and questions (`add_followup`). Tie a follow-up to a workstream only if it clearly belongs to one. **Give every new item its link and a done check** (`check_spec` and/or `done_when`), then confirm it reads correctly with `python3 app/checks.py list`.
    - close loops: resolve items whose check shows DONE in the precheck, and items marked "judge" whose `done_when` you can now see happened (`resolve_ask` / `resolve_followup`)
+   - **re-read the source thread of every open "judge" item with a Slack URL** (`slack_read_thread` on its channel + ts). A reply inside an older thread never appears as a new channel message, so the channel read alone misses it. If the reply or filed issue meets `done_when`, resolve the item. Don't make the bar stricter than `done_when` (e.g. "issue filed" counts; don't wait for the PR to merge).
    - check GitHub (`gh`, repo `github_repo`) when a ticket or PR state matters
    - for any workstream that changed: rewrite tldr, key_points, status and status_note (`update_workstream`)
 5. New candidate workstreams: only if it's clearly a goal with an owner and the owner of this agent is involved. Never anything rejected or close to it. Add as `suggested` (`app/suggest.py`).
