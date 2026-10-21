@@ -7,8 +7,9 @@
     "workspace_url": "https://acme.slack.com"
   },
   "meetings": {
-    "source": "Brainio",
-    "url_template": "https://brain.example.com/?recording={id}"
+    "kind": "folder",
+    "location": "/home/agent/box/Meeting transcripts",
+    "url_template": ""
   },
   "port": 5555
 }
