@@ -1,6 +1,6 @@
 # Workstream Assistant
 
-![Input context and execution context flow into the assistant, which joins them up into workstreams heading to their goals](assets/hero.svg)
+![Input context and execution context flow into the assistant, which joins them up into workstreams heading to their goals. You work with the assistant, and it acts in your execution context for you](assets/hero.svg)
 
 Drive your workstreams to completion, or follow the ones you depend on, without forgetting what's on you or who you're waiting on.
 
@@ -17,7 +17,7 @@ Every workstream has two parts:
 
 To know where a workstream stands, you read both parts and join them up in your head, for every workstream, every day. That's how an ask from a meeting slips, or a piece of work you were waiting on gets finished and nobody tells you.
 
-Workstream Assistant is a [DAM](https://github.com/dam-agents/dam) Starter Kit for an agent that reads both for you and joins them up. When a new workstream comes up in a conversation, the agent suggests it to you. Approve it and the agent keeps track of it from then on. It reads your input context from Slack and your execution context from GitHub. If your team already uses a meeting-transcript tool, you can connect that as well.
+Workstream Assistant is a [DAM](https://github.com/dam-agents/dam) Starter Kit for an agent that reads both for you and joins them up. When a new workstream comes up in a conversation, the agent suggests it to you. Approve it and the agent keeps track of it from then on. When something is blocked on you, you can hand it to the agent, which already has the whole context. It reads your input context from Slack and your execution context from GitHub. If your team already uses a meeting-transcript tool, you can connect that as well.
 
 The agent keeps track of:
 
@@ -33,4 +33,4 @@ It also gives you an app, a control centre for all of this. The app opens with "
 - **You decide what it tracks.** Every Slack and meeting sweep looks for new workstreams that have a clear goal and an owner, and that you're involved in. They show up in the app as suggestions, and you approve or reject each one. Give a reason when you reject one ("not my area", "we already have an issue for that") and it won't suggest that workstream, or anything close to it, again.
 - **It closes finished items itself.** Each ask and follow-up carries a done check: an issue closed, a PR merged, a tag that contains a fix, a release with notes. A script runs the checks every 20 minutes on weekdays and wakes the agent only when one passes, so idle runs cost no model calls. The agent confirms each item is really done before closing it.
 - **Every entry links to its source.** Progress, asks and follow-ups link to the exact Slack message, GitHub issue or PR, or meeting behind them. When sources disagree, such as a release that "shipped" in Slack but was never deployed, the agent corrects the record and tells you.
-- **It asks before acting outside its sandbox.** It reads the sources you connect and writes only to its own database. Posting to Slack, commenting on or closing GitHub issues, and sharing artifacts all wait for your go-ahead.
+- **It can act for you.** When something is blocked on you, ask the agent to do it. It already knows the workstream, so it can draft what's needed, such as a reply on an issue or the release notes, and do the work in GitHub once you say so. Until you do, it only reads the sources you connect and writes to its own database.
