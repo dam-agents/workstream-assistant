@@ -10,7 +10,8 @@ DEFAULTS = {
     "timezone": "UTC",          # IANA zone for timestamps and schedules
     "github_repo": "",          # default repo for done checks and #123 links, e.g. dam-agents/dam
     "slack": {"user_id": "", "workspace_url": ""},  # e.g. U0123456789, https://acme.slack.com
-    "meetings": {"source": "", "url_template": ""},  # e.g. "Brainio", https://brain.example.com/?recording={id}
+    # Optional. kind: "" (no transcripts), mcp, folder, github or upload; see procedures/meeting-sweep.md
+    "meetings": {"kind": "", "location": "", "url_template": ""},
     "port": 5555,               # the only port interactive artifacts can reach
 }
 
@@ -21,6 +22,9 @@ def load():
         with open(PATH, encoding="utf-8") as f:
             for k, v in json.load(f).items():
                 cfg[k] = {**cfg[k], **v} if isinstance(cfg.get(k), dict) and isinstance(v, dict) else v
+    m = cfg["meetings"]
+    if not m["kind"] and m.get("source"):  # older configs named only an MCP server
+        m["kind"], m["location"] = "mcp", m["location"] or m["source"]
     return cfg
 
 

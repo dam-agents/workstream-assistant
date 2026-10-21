@@ -68,7 +68,7 @@ Every ask, follow-up and progress entry **must have a URL** pointing at exactly 
 |---|---|
 | Slack | The message permalink (`<workspace_url>/archives/<channel>/p<ts>`, from the search result's permalink). The message, not the channel. |
 | GitHub | The issue, PR, release or tag URL. |
-| Meeting | `meetings.url_template` from `config.json`, with the recording id. |
+| Meeting | `meetings.url_template` from `config.json` with the recording id, else the transcript file's own link (GitHub, Box). For an upload with no link, name the file in `source`. |
 | Claude artifact | Its share link. |
 | A source I can't reach (e.g. a screenshot of another Slack) | The closest artifact it's about, such as the PR, and name the real source in `source`. |
 
@@ -106,7 +106,7 @@ The `db.py` helpers print a warning when an item has no link. Fix it before fini
 | GitHub | `gh`, repo `github_repo` | Issues, PRs, labels, sub-issues (`gh api repos/<repo>/issues/N/sub_issues`), tags, releases. |
 | Slack | the Slack connection's MCP tools, user `slack.user_id` | Search `from:<@USER> after:YYYY-MM-DD` for the owner's activity, `<@USER>` for mentions, then open threads for context. Watched channels are read in full: `python3 app/sweep.py channels`, add with `channel-add <id> <name>`. Ask before searching private channels on a new kind of query. Space calls out; search is rate-limited. |
 | Slack files | the Slack file-read tool | Markdown, PDFs and screenshots are readable. Skip personal admin such as invoices. |
-| Meetings | the meeting MCP server named in `meetings.source` | Search, then fetch. Long transcripts land in a file: read them in chunks. If speakers aren't confirmed, say so in the progress entry. |
+| Meetings (optional) | however the owner provides transcripts: `meetings.kind` is `mcp`, `folder`, `github` or `upload`, at `meetings.location` | See [`procedures/meeting-sweep.md`](procedures/meeting-sweep.md). Treat a transcript the owner uploads in chat the same way, whatever the kind. Read long transcripts in chunks. If speakers aren't confirmed, say so in the progress entry. |
 | Claude artifacts | `agent-browser` with the owner's sign-in | Open the link and read the snapshot inside the iframe. |
 | Screenshots the owner shares | the chat | Treat them as a source, e.g. from a Slack I can't reach. |
 
@@ -134,7 +134,7 @@ Each schedule's task only says "read AGENTS.md, then follow `procedures/<name>.m
 | **Workstream Assistant: meeting sweep** | weekdays, every 2 h at :37, 09:37–19:37 | `app/sweep.py state meetings` | [`procedures/meeting-sweep.md`](procedures/meeting-sweep.md) |
 | **Workstream Assistant: close finished items** | weekdays, every 20 min, 08:00–20:40 | `app/checks.py precheck`: only wakes me when a done check passes | [`procedures/close-finished.md`](procedures/close-finished.md) |
 
-A sweep's precheck skips the run when its source isn't configured in `config.json`.
+A sweep's precheck skips the run when its source isn't configured in `config.json`. The meeting sweep also skips when transcripts come only as uploads, and, for a folder, when there are no new files.
 
 Bookkeeping is in `app/sweep.py`: `state` prints the watermark, watched channels, open items with their done-check results and the rejected workstreams; `mark` moves the watermark (only after a successful update, so a crashed run leaves the gap for the next one); `seen <id>` records a processed meeting; `ensure-server` starts the API.
 

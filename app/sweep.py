@@ -1,7 +1,7 @@
 """Sweep bookkeeping for the scheduled runs. Run from anywhere:
   python3 app/sweep.py state slack|meetings   print what the next sweep needs; also the schedules' precheck
   python3 app/sweep.py mark slack|meetings    set the watermark to now (call at the END of a successful sweep)
-  python3 app/sweep.py seen <recording_id> [title] [relevant 0|1]
+  python3 app/sweep.py seen <recording_id> [title] [relevant 0|1]   recording_id: the source's id, or the file path
   python3 app/sweep.py ensure-server          start the API server if it isn't answering
   python3 app/sweep.py channels               list the watched Slack channels
   python3 app/sweep.py channel-add <id> <name> / channel-remove <id>
@@ -30,12 +30,21 @@ def server_up():
         return False
 
 
+def transcript_files(root):
+    """Paths under a transcript folder, relative to it; these are the folder's recording ids."""
+    out = []
+    for d, _, files in os.walk(root):
+        out += [os.path.relpath(os.path.join(d, f), root) for f in files if not f.startswith(".")]
+    return out
+
+
 def main():
     conn = db.connect()
     cmd = sys.argv[1] if len(sys.argv) > 1 else "state"
     if cmd == "state":
         src = sys.argv[2]
-        if not db.ME or (src == "slack" and not CFG["slack"]["user_id"]) or (src == "meetings" and not CFG["meetings"]["source"]):
+        mt = CFG["meetings"]
+        if not db.ME or (src == "slack" and not CFG["slack"]["user_id"]) or (src == "meetings" and mt["kind"] in ("", "upload")):
             print(f"{src} sweep not configured in config.json; skipping.")
             sys.exit(1)  # as a precheck: skip this run without waking the agent
         last = db.get_meta(conn, f"last_sweep_{src}", "")
@@ -57,9 +66,19 @@ def main():
                 mark = {True: "DONE", False: "open", None: "judge"}[ok]
                 print(f"  {mark:5} {checks.label(k, it)}  ->  {d}")
         if src == "meetings":
-            ids = sorted(db.seen_meeting_ids(conn))
-            print(f"Meeting source: {CFG['meetings']['source'] or '(not configured)'}")
-            print(f"Already processed meetings ({len(ids)}): {', '.join(ids)}")
+            seen = db.seen_meeting_ids(conn)
+            print(f"Transcripts: {mt['kind']} at {mt['location']}")
+            if mt["kind"] == "folder" and not os.path.isdir(mt["location"]):
+                print("Transcript folder NOT FOUND: tell the owner it may be unmounted; don't guess another path.")
+            elif mt["kind"] == "folder":
+                new = sorted(set(transcript_files(mt["location"])) - seen)
+                if not new:
+                    print("No new transcript files; skipping.")
+                    sys.exit(1)
+                print(f"New transcript files ({len(new)}):")
+                for f in new:
+                    print(f"  - {f}")
+            print(f"Already processed meetings ({len(seen)}): {', '.join(sorted(seen))}")
         rej = db.rejected(conn)
         if rej:
             print("Rejected workstreams (never re-suggest): " + "; ".join(

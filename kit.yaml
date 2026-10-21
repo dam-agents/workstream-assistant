@@ -47,8 +47,9 @@ connections:
   - accepts: [mcp-server]
     required: false
     note: >-
-      A meeting-transcript MCP server (for example Brainio). Without it the meeting
-      sweep is skipped.
+      A meeting-transcript MCP server. Optional: transcripts can also come from a
+      mounted folder, a GitHub repository or chat uploads, or not at all. Onboarding
+      asks which.
 
 schedules:
   - name: "Workstream Assistant: Slack sweep"
