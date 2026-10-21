@@ -1,6 +1,6 @@
 # Workstream Assistant
 
-![Input context and execution context flow into the assistant, which joins them up into workstreams heading to their goals](assets/hero.svg)
+![Input context and execution context flow into the assistant, which joins them up into workstreams heading to their goals. You work with the assistant, and it acts in your execution context for you](assets/hero.svg)
 
 Drive your workstreams to completion, or follow the ones you depend on, without forgetting what's on you or who you're waiting on.
 
