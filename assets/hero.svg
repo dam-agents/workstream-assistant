@@ -1,0 +1,131 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400" width="1200" height="400" role="img" aria-labelledby="t d">
+  <title id="t">Workstream Assistant</title>
+  <desc id="d">Input context (messages and meetings) and execution context (tasks and code) flow into the assistant, which joins them up into workstreams. One has reached its goal, one needs you, and one is a workstream you follow.</desc>
+  <style>
+    :root {
+      --surface:#f6f7f9; --raise:#ffffff; --border:#e3e6ea; --text:#1b1f24; --muted:#5b6470;
+      --blue:#2457c5; --blue-bg:#e9effc; --exec:#7a8491; --green:#1f7a3d; --amber:#a86500;
+      --needs:#7c3aed; --follow:#9aa3ae; --flow:#ffffff;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --surface:#1c2026; --raise:#20252c; --border:#2c323a; --text:#e6e9ed; --muted:#9aa3ae;
+        --blue:#8fb1ff; --blue-bg:#1b2640; --exec:#7a8491; --green:#6fd08f; --amber:#f2b45a;
+        --needs:#a78bfa; --follow:#5b6470; --flow:#1c2026;
+      }
+    }
+    .card { fill:var(--surface); stroke:var(--border); stroke-width:2; }
+    .tile { fill:var(--raise); stroke:var(--border); stroke-width:1.5; }
+    .label { font:700 13px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; letter-spacing:.08em; fill:var(--muted); }
+    .g-in { fill:none; stroke:var(--blue); stroke-width:2.5; stroke-linecap:round; stroke-linejoin:round; }
+    .g-in-fill { fill:var(--blue); }
+    .g-ex { fill:none; stroke:var(--muted); stroke-width:2.5; stroke-linecap:round; stroke-linejoin:round; }
+    .s-in { fill:none; stroke:var(--blue); stroke-width:3; stroke-linecap:round; opacity:.55; }
+    .s-ex { fill:none; stroke:var(--exec); stroke-width:3; stroke-linecap:round; opacity:.55; }
+    .lane { fill:none; stroke-width:4; stroke-linecap:round; }
+    .l-green { stroke:var(--green); }
+    .l-amber { stroke:var(--amber); }
+    .l-follow { stroke:var(--follow); stroke-dasharray:2 12; }
+    .flow { fill:none; stroke:var(--flow); stroke-width:3; stroke-linecap:round; stroke-dasharray:1 26; animation:flow 2.4s linear infinite; }
+    .halo-bg { fill:var(--blue-bg); }
+    .node { fill:var(--blue); }
+    .mark { fill:none; stroke:var(--raise); stroke-width:4; stroke-linecap:round; stroke-linejoin:round; }
+    .ev { fill:var(--raise); stroke-width:3; }
+    .ev-green { stroke:var(--green); } .ev-amber { stroke:var(--amber); } .ev-follow { stroke:var(--follow); }
+    .done { fill:var(--green); }
+    .check { fill:none; stroke:var(--raise); stroke-width:3.5; stroke-linecap:round; stroke-linejoin:round; }
+    .goal-ring { fill:none; stroke-width:3; }
+    .needs { fill:var(--needs); }
+    .pulse { fill:var(--needs); opacity:.25; transform-box:fill-box; transform-origin:center; animation:pulse 2.4s ease-out infinite; }
+    @keyframes flow { to { stroke-dashoffset:-54; } }
+    @keyframes pulse { 0% { transform:scale(.6); opacity:.45; } 80%,100% { transform:scale(2.2); opacity:0; } }
+    @media (prefers-reduced-motion: reduce) { .flow, .pulse { animation:none; } }
+  </style>
+
+  <defs>
+    <!-- Input context threads into the assistant -->
+    <path id="in1" d="M210 100 C 360 100, 390 189, 524 189"/>
+    <path id="in2" d="M210 116 C 350 116, 400 195, 524 195"/>
+    <!-- Execution context threads into the assistant -->
+    <path id="ex1" d="M210 284 C 350 284, 400 205, 524 205"/>
+    <path id="ex2" d="M210 300 C 360 300, 390 211, 524 211"/>
+    <!-- Workstreams out of the assistant -->
+    <path id="w1" d="M596 196 C 680 196, 690 110, 780 110 L 1086 110"/>
+    <path id="w2" d="M596 200 L 1086 200"/>
+    <path id="w3" d="M596 204 C 680 204, 690 290, 780 290 L 1086 290"/>
+  </defs>
+
+  <rect class="card" x="1" y="1" width="1198" height="398" rx="22"/>
+
+  <!-- Labels -->
+  <text class="label" x="60" y="58">INPUT CONTEXT</text>
+  <text class="label" x="60" y="358">EXECUTION CONTEXT</text>
+  <text class="label" x="560" y="290" text-anchor="middle">ASSISTANT</text>
+  <text class="label" x="780" y="58">WORKSTREAMS</text>
+  <text class="label" x="1110" y="58" text-anchor="middle">GOALS</text>
+
+  <!-- Input context tiles: messages, meetings -->
+  <rect class="tile" x="60" y="76" width="64" height="64" rx="14"/>
+  <path class="g-in" d="M80 94 h24 a6 6 0 0 1 6 6 v10 a6 6 0 0 1 -6 6 h-14 l-7 6 v-6 h-3 a6 6 0 0 1 -6 -6 v-10 a6 6 0 0 1 6 -6 z"/>
+  <circle class="g-in-fill" cx="85" cy="105" r="2.2"/><circle class="g-in-fill" cx="92" cy="105" r="2.2"/><circle class="g-in-fill" cx="99" cy="105" r="2.2"/>
+
+  <rect class="tile" x="140" y="76" width="64" height="64" rx="14"/>
+  <circle class="g-in" cx="172" cy="99" r="5"/>
+  <path class="g-in" d="M162 120 a10 10 0 0 1 20 0"/>
+  <circle class="g-in" cx="157" cy="104" r="3.6"/>
+  <path class="g-in" d="M150 120 a7 7 0 0 1 11 -6"/>
+  <circle class="g-in" cx="187" cy="104" r="3.6"/>
+  <path class="g-in" d="M194 120 a7 7 0 0 0 -11 -6"/>
+
+  <!-- Execution context tiles: tasks, code -->
+  <rect class="tile" x="60" y="260" width="64" height="64" rx="14"/>
+  <rect class="g-ex" x="77" y="278" width="8" height="8" rx="2"/>
+  <path class="g-ex" d="M79 282 l1.6 1.8 l3 -3.6"/>
+  <path class="g-ex" d="M91 282 h16"/>
+  <rect class="g-ex" x="77" y="296" width="8" height="8" rx="2"/>
+  <path class="g-ex" d="M91 300 h11"/>
+
+  <rect class="tile" x="140" y="260" width="64" height="64" rx="14"/>
+  <circle class="g-ex" cx="163" cy="280" r="4"/>
+  <circle class="g-ex" cx="163" cy="305" r="4"/>
+  <circle class="g-ex" cx="183" cy="286" r="4"/>
+  <path class="g-ex" d="M163 284 v17"/>
+  <path class="g-ex" d="M183 290 c0 8 -20 5 -20 11"/>
+
+  <!-- Threads -->
+  <use href="#in1" class="s-in"/><use href="#in2" class="s-in"/>
+  <use href="#ex1" class="s-ex"/><use href="#ex2" class="s-ex"/>
+  <use href="#in1" class="flow"/><use href="#in2" class="flow" style="animation-delay:-1.1s"/>
+  <use href="#ex1" class="flow" style="animation-delay:-.6s"/><use href="#ex2" class="flow" style="animation-delay:-1.7s"/>
+
+  <!-- Workstreams -->
+  <use href="#w1" class="lane l-green"/>
+  <use href="#w2" class="lane l-amber"/>
+  <use href="#w3" class="lane l-follow"/>
+  <use href="#w1" class="flow" style="animation-delay:-.4s"/>
+  <use href="#w2" class="flow" style="animation-delay:-1.4s"/>
+
+  <!-- Progress on each workstream -->
+  <circle class="ev ev-green" cx="830" cy="110" r="6"/>
+  <circle class="ev ev-green" cx="910" cy="110" r="6"/>
+  <circle class="ev ev-green" cx="990" cy="110" r="6"/>
+  <circle class="ev ev-amber" cx="830" cy="200" r="6"/>
+  <circle class="pulse" cx="930" cy="200" r="9"/>
+  <circle class="needs" cx="930" cy="200" r="9"/>
+  <circle class="ev ev-amber" cx="1010" cy="200" r="6"/>
+  <circle class="ev ev-follow" cx="870" cy="290" r="6"/>
+  <circle class="ev ev-follow" cx="980" cy="290" r="6"/>
+
+  <!-- Goals: reached, ahead, followed -->
+  <circle class="done" cx="1110" cy="110" r="18"/>
+  <path class="check" d="M1101 110 l6 6 l11 -12"/>
+  <circle class="goal-ring" cx="1110" cy="200" r="18" style="stroke:var(--amber)"/>
+  <circle cx="1110" cy="200" r="7" style="fill:var(--amber)"/>
+  <circle class="goal-ring" cx="1110" cy="290" r="18" style="stroke:var(--follow)"/>
+  <circle cx="1110" cy="290" r="7" style="fill:var(--follow)"/>
+
+  <!-- The assistant joins both parts up -->
+  <circle class="halo-bg" cx="560" cy="200" r="58"/>
+  <rect class="node" x="526" y="166" width="68" height="68" rx="18"/>
+  <path class="mark" d="M541 189 C 553 189, 553 200, 565 200 M541 211 C 553 211, 553 200, 565 200 L 578 200 M571 193 L 578 200 L 571 207"/>
+</svg>
