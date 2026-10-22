@@ -8,6 +8,14 @@ New entries go under **Unreleased** in the pull request that makes the change (s
 
 ## Unreleased
 
+### Debrief runs in the open chat ([#9](https://github.com/dam-agents/workstream-assistant/pull/9))
+
+- **Debrief** now sends the debrief prompt into the chat beside the dashboard, like **Ask agent to refresh**, instead of opening a new session. Opening a session relied on a platform tool (`schedule_once`) that isn't available, so the button failed with "Tool schedule_once not found".
+- `POST /api/debriefs/:id/start` marks the debrief started and returns the prompt; `app/launch.py` is gone.
+- For a clean thread, open a new chat first and click **Debrief** there.
+
+**After updating:** republish the app (`app/README.md`, Publishing). Until you do, the published page still calls the old flow and the button keeps failing.
+
 ### The app page knows when a Kit Update left it behind ([#7](https://github.com/dam-agents/workstream-assistant/pull/7))
 
 - The page carries the version of the template it was built from. When the template on disk is newer, the page shows an **out of date** banner with **Ask agent to republish**, and `ensure-server` and every sweep's precheck print `App page: STALE`.

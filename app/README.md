@@ -13,7 +13,6 @@ The app behind `AGENTS.md`: the database, the API server and the interactive art
 | `app/app.template.html` | The UI. `app/build.py` embeds a data snapshot and writes `app/app.html`. |
 | `app/checks.py` | Done checks for asks and follow-ups (`check_spec` JSON). `list`, `verify [--apply]`, `precheck`. |
 | `app/sweep.py` | Sweep bookkeeping, all per source: `sources`, `state <type\|source-id>`, `mark`, `seen`, watched channels, `ensure-server`, and the `debrief-*` commands. |
-| `app/launch.py` | Opens a new agent session from the server (the platform's `schedule_once` with no time = run now). The Debrief button needs it, because `platform.sendPrompt` can only write into the chat that is already open. `WSA_LAUNCH_DRY_RUN=1` prints the request instead. |
 | `app/suggest.py` | Adds suggested workstreams, with their first progress, asks and follow-ups, from a JSON file. |
 
 `WSA_DB` and `WSA_CONFIG` override the database and config paths (useful for tests).
@@ -24,7 +23,7 @@ The input context is a list: any number of chat and meeting sources, each an ent
 
 A database written before this change is migrated on the next `db.connect()`: `seen_meetings` is rebuilt with a `source` column, `debriefs` gains one, the old `slack_channels` meta becomes `channels`, and the old `last_sweep_slack` / `last_sweep_meetings` watermarks are copied to the **first** source of each type (the one they referred to). Renaming a source's `id` in `config.json` starts that source's history over; nothing else changes.
 
-**API:** `GET /api/health`, `GET /api/summary`, `GET|PATCH /api/workstreams/:id` (id or ref, e.g. `W3`), `POST /api/workstreams/:id/approve`, `POST /api/workstreams/:id/reject` (`{reason}`), `GET /api/rejected`, `POST /api/workstreams/:id/items`, `PATCH /api/items/:id`, `POST /api/workstreams/:id/progress`, `POST /api/workstreams/:id/asks` (`{text, asked_by, source, url}`), `POST /api/asks/:id/done`, `POST /api/followups` (`{text, workstream_id?, waiting_on, next_step, source, url}`), `POST /api/followups/:id/done`, `GET /api/debriefs` (each with its `source` and `source_name`), `POST /api/debriefs/:id/start` (opens the session, then marks it started; 502 and no state change if the platform can't be reached), `POST /api/debriefs/:id/dismiss` (`{reason}`).
+**API:** `GET /api/health`, `GET /api/summary`, `GET|PATCH /api/workstreams/:id` (id or ref, e.g. `W3`), `POST /api/workstreams/:id/approve`, `POST /api/workstreams/:id/reject` (`{reason}`), `GET /api/rejected`, `POST /api/workstreams/:id/items`, `PATCH /api/items/:id`, `POST /api/workstreams/:id/progress`, `POST /api/workstreams/:id/asks` (`{text, asked_by, source, url}`), `POST /api/asks/:id/done`, `POST /api/followups` (`{text, workstream_id?, waiting_on, next_step, source, url}`), `POST /api/followups/:id/done`, `GET /api/debriefs` (each with its `source` and `source_name`), `POST /api/debriefs/:id/start` (marks it started and returns the debrief with a `prompt`, which the page sends into the open chat), `POST /api/debriefs/:id/dismiss` (`{reason}`).
 
 ## Publishing
 
