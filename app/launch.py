@@ -59,8 +59,9 @@ def call_tool(name, arguments):
 
 def debrief_task(d):
     """The prompt the new session starts with."""
+    whence = f" from {d['source_name']}" if d.get("source_name") else ""
     return (
-        f"Debrief of the meeting “{d['title']}” (debrief #{d['id']}). "
+        f"Debrief of the meeting “{d['title']}”{whence} (debrief #{d['id']}). "
         f"Read /home/agent/work/AGENTS.md, then follow the debrief skill, /home/agent/work/.claude/skills/debrief/SKILL.md, "
         f"for this meeting. Start with `python3 /home/agent/work/app/sweep.py debrief-show {d['id']}`, "
         f"which prints the meeting and where its transcript is. "

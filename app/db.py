@@ -1,4 +1,5 @@
 """Workstream Assistant store: one SQLite file, shared by the API server, the scripts and the agent."""
+import json
 import os
 import re
 import sqlite3
@@ -6,6 +7,7 @@ import sys
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
+import config
 from config import CFG, ROOT
 
 DB_PATH = os.environ.get("WSA_DB", os.path.join(ROOT, "data", "wsa.db"))
@@ -109,14 +111,17 @@ CREATE TABLE IF NOT EXISTS followups (
 );
 CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS seen_meetings (
-  recording_id TEXT PRIMARY KEY,
+  source       TEXT NOT NULL DEFAULT '',     -- the meeting source's id in config.json; ids are only unique within one source
+  recording_id TEXT NOT NULL,
   title        TEXT NOT NULL DEFAULT '',
   relevant     INTEGER NOT NULL DEFAULT 0,   -- 1 if it changed a workstream
-  seen_at      TEXT NOT NULL
+  seen_at      TEXT NOT NULL,
+  PRIMARY KEY (source, recording_id)
 );
 CREATE TABLE IF NOT EXISTS debriefs (
   id            INTEGER PRIMARY KEY,
-  recording_id  TEXT NOT NULL UNIQUE,          -- the meeting's id, as in seen_meetings
+  source        TEXT NOT NULL DEFAULT '',      -- which meeting source it came from
+  recording_id  TEXT NOT NULL,                 -- the meeting's id, as in seen_meetings
   title         TEXT NOT NULL,
   meeting_ts    TEXT,                          -- when the meeting happened
   url           TEXT,                          -- the recording / transcript
@@ -126,7 +131,8 @@ CREATE TABLE IF NOT EXISTS debriefs (
   proposed_at   TEXT NOT NULL,
   started_at    TEXT,
   closed_at     TEXT,
-  outcome       TEXT NOT NULL DEFAULT ''       -- one line, written when the debrief is done
+  outcome       TEXT NOT NULL DEFAULT '',      -- one line, written when the debrief is done
+  UNIQUE (source, recording_id)
 );
 CREATE INDEX IF NOT EXISTS items_ws ON items(workstream_id);
 CREATE INDEX IF NOT EXISTS asks_ws ON asks(workstream_id);
@@ -148,8 +154,52 @@ def connect():
     conn.execute("PRAGMA foreign_keys = ON")
     conn.execute("PRAGMA journal_mode = WAL")
     conn.executescript(SCHEMA)
+    _migrate_to_sources(conn)
     _assign_refs(conn)
     return conn
+
+
+def _cols(conn, table):
+    return {r["name"] for r in conn.execute(f"PRAGMA table_info({table})")}
+
+
+def _migrate_to_sources(conn):
+    """Bring a database written before the input context became a list of sources up to date.
+
+    Everything keyed per source — the sweep watermark, the watched channels, the processed meetings
+    and the debriefs — used to be keyed per *kind* of source, assuming one Slack and one meeting
+    source. Rows from then are attributed to the first source of the matching type, so an instance
+    that had one of each keeps its history instead of re-reading everything.
+    """
+    chat = config.sources("chat")
+    meet = config.sources("meetings")
+    if "source" not in _cols(conn, "seen_meetings"):
+        home = meet[0]["id"] if meet else "meetings"
+        conn.executescript(f"""
+            ALTER TABLE seen_meetings RENAME TO seen_meetings_old;
+            CREATE TABLE seen_meetings (
+              source TEXT NOT NULL DEFAULT '', recording_id TEXT NOT NULL, title TEXT NOT NULL DEFAULT '',
+              relevant INTEGER NOT NULL DEFAULT 0, seen_at TEXT NOT NULL, PRIMARY KEY (source, recording_id));
+            INSERT INTO seen_meetings (source, recording_id, title, relevant, seen_at)
+              SELECT '{home}', recording_id, title, relevant, seen_at FROM seen_meetings_old;
+            DROP TABLE seen_meetings_old;""")
+        conn.commit()
+    if "source" not in _cols(conn, "debriefs"):
+        home = meet[0]["id"] if meet else "meetings"
+        conn.execute("ALTER TABLE debriefs ADD COLUMN source TEXT NOT NULL DEFAULT ''")
+        conn.execute("UPDATE debriefs SET source = ?", (home,))
+        conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS debriefs_src_rec ON debriefs(source, recording_id)")
+        conn.commit()
+    old_chans = get_meta(conn, "slack_channels", "")
+    if old_chans and not get_meta(conn, "channels", ""):
+        set_meta(conn, "channels", json.dumps({chat[0]["id"] if chat else "slack": json.loads(old_chans)}))
+    for group in (chat, meet):  # the watermark written when that type had exactly one source
+        if not group:
+            continue
+        first, legacy = group[0], config.LEGACY_SWEEP_KEY[group[0]["type"]]
+        if get_meta(conn, legacy, "") and not get_meta(conn, _sweep_key(first["id"]), ""):
+            set_meta(conn, _sweep_key(first["id"]), get_meta(conn, legacy))
+        # Any further source of that type is new: it has no watermark, so its first sweep reads ~7 days back.
 
 
 def _assign_refs(conn):
@@ -399,40 +449,90 @@ def set_meta(conn, key, value):
     conn.commit()
 
 
-def mark_meeting_seen(conn, recording_id, title="", relevant=False):
-    conn.execute("INSERT OR REPLACE INTO seen_meetings (recording_id, title, relevant, seen_at) VALUES (?,?,?,?)",
-                 (recording_id, title, int(relevant), now()))
+# ---- Per-source bookkeeping: one watermark, channel list and meeting history per configured source ----
+
+def _sweep_key(source_id):
+    return f"last_sweep_{source_id}"
+
+
+def last_sweep(conn, source_id):
+    """When this source was last swept successfully, or "" for a source that has never been swept."""
+    return get_meta(conn, _sweep_key(source_id), "")
+
+
+def mark_sweep(conn, source_id, when=None):
+    """Move one source's watermark. Only at the end of a successful sweep of that source."""
+    set_meta(conn, _sweep_key(source_id), when or now())
+    return last_sweep(conn, source_id)
+
+
+def _all_channels(conn):
+    return json.loads(get_meta(conn, "channels", "{}"))
+
+
+def channels(conn, source_id=None):
+    """Channels read in full: one source's list, or {source_id: [...]} for every source."""
+    all_ = _all_channels(conn)
+    return all_.get(source_id, []) if source_id else all_
+
+
+def channel_add(conn, source_id, channel_id, name):
+    all_ = _all_channels(conn)
+    all_[source_id] = [c for c in all_.get(source_id, []) if c["id"] != channel_id] + [{"id": channel_id, "name": name}]
+    set_meta(conn, "channels", json.dumps(all_, ensure_ascii=False))
+    return all_[source_id]
+
+
+def channel_remove(conn, source_id, channel_id):
+    all_ = _all_channels(conn)
+    all_[source_id] = [c for c in all_.get(source_id, []) if c["id"] != channel_id]
+    set_meta(conn, "channels", json.dumps(all_, ensure_ascii=False))
+    return all_[source_id]
+
+
+def mark_meeting_seen(conn, source_id, recording_id, title="", relevant=False):
+    conn.execute("INSERT OR REPLACE INTO seen_meetings (source, recording_id, title, relevant, seen_at) VALUES (?,?,?,?,?)",
+                 (source_id, str(recording_id), title, int(relevant), now()))
     conn.commit()
 
 
-def seen_meeting_ids(conn):
-    return {r["recording_id"] for r in conn.execute("SELECT recording_id FROM seen_meetings")}
+def seen_meeting_ids(conn, source_id):
+    """The recording ids already processed in this source. Ids from other sources never collide with them."""
+    return {r["recording_id"] for r in conn.execute("SELECT recording_id FROM seen_meetings WHERE source = ?", (source_id,))}
 
 
 # ---- Debriefs: a meeting the sweep proposes and the owner chooses to talk through ----
 
-def propose_debrief(conn, recording_id, title, meeting_ts=None, url=None, why="", workstreams=""):
+def propose_debrief(conn, source_id, recording_id, title, meeting_ts=None, url=None, why="", workstreams=""):
     """Offer a meeting for debrief. It shows on the dashboard until the owner starts or dismisses it.
     Also marks the meeting as seen, so the sweep never proposes it twice. Returns the debrief id."""
     _need_link("debrief", title, url)
     conn.execute(
-        """INSERT INTO debriefs (recording_id, title, meeting_ts, url, why, workstreams, proposed_at)
-           VALUES (?,?,?,?,?,?,?) ON CONFLICT(recording_id) DO NOTHING""",
-        (str(recording_id), title, meeting_ts, url, why, workstreams, now()))
+        """INSERT INTO debriefs (source, recording_id, title, meeting_ts, url, why, workstreams, proposed_at)
+           VALUES (?,?,?,?,?,?,?,?) ON CONFLICT(source, recording_id) DO NOTHING""",
+        (source_id, str(recording_id), title, meeting_ts, url, why, workstreams, now()))
     conn.commit()
-    mark_meeting_seen(conn, str(recording_id), title, True)
-    return conn.execute("SELECT id FROM debriefs WHERE recording_id = ?", (str(recording_id),)).fetchone()["id"]
+    mark_meeting_seen(conn, source_id, str(recording_id), title, True)
+    return conn.execute("SELECT id FROM debriefs WHERE source = ? AND recording_id = ?",
+                        (source_id, str(recording_id))).fetchone()["id"]
+
+
+def _with_source_name(d):
+    """Add the source's configured name, so the app and the chat can say which meeting tool it came from."""
+    src = config.source(d["source"], "meetings") if d.get("source") else None
+    d["source_name"] = src["name"] if src else (d.get("source") or "")
+    return d
 
 
 def open_debriefs(conn):
     """Proposed and started debriefs, newest meeting first: what the dashboard shows."""
-    return rows(conn.execute(
-        "SELECT * FROM debriefs WHERE state IN ('proposed','started') ORDER BY COALESCE(meeting_ts, proposed_at) DESC"))
+    return [_with_source_name(d) for d in rows(conn.execute(
+        "SELECT * FROM debriefs WHERE state IN ('proposed','started') ORDER BY COALESCE(meeting_ts, proposed_at) DESC"))]
 
 
 def get_debrief(conn, debrief_id):
     r = conn.execute("SELECT * FROM debriefs WHERE id = ?", (int(debrief_id),)).fetchone()
-    return dict(r) if r else None
+    return _with_source_name(dict(r)) if r else None
 
 
 def _set_debrief(conn, debrief_id, state, outcome=None):

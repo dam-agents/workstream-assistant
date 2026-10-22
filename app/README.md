@@ -6,19 +6,25 @@ The app behind `AGENTS.md`: the database, the API server and the interactive art
 
 | File | Role |
 |---|---|
-| `data/wsa.db` | SQLite, **the source of truth** (git-ignored, created on first use). Tables: `workstreams` (permanent `ref`, shown as `W<ref>`; `state` suggested/approved/rejected), `asks` (open while `done_at` is null), `followups` (`workstream_id` NULL = loose; `waiting_on`), `progress`, `items`, `notes` (decision / principle / later), `links`, `snapshots`, `meta`, `seen_meetings`, `debriefs` (a meeting proposed for debrief: `state` proposed/started/done/dismissed). |
-| `config.json` | Instance settings (git-ignored), read by `config.py`. Shape: `config.example.json`. |
-| `app/db.py` | Schema and helpers: `add_workstream`, `workstream`, `summary`, `update_workstream`, `decide`, `rejected`, `resolve_workstream`, `add_progress`, `add_ask`/`resolve_ask`, `add_followup`/`resolve_followup`, `add_item`/`update_item`, `propose_debrief`/`start_debrief`/`finish_debrief`/`dismiss_debrief`/`open_debriefs`. |
+| `data/wsa.db` | SQLite, **the source of truth** (git-ignored, created on first use). Tables: `workstreams` (permanent `ref`, shown as `W<ref>`; `state` suggested/approved/rejected), `asks` (open while `done_at` is null), `followups` (`workstream_id` NULL = loose; `waiting_on`), `progress`, `items`, `notes` (decision / principle / later), `links`, `snapshots`, `meta` (per-source watermarks `last_sweep_<source id>`, and `channels`: watched channels per source), `seen_meetings` (keyed `(source, recording_id)`), `debriefs` (a meeting proposed for debrief, with the `source` it came from: `state` proposed/started/done/dismissed). |
+| `config.json` | Instance settings (git-ignored), read by `config.py`, which also normalizes the `sources` list and reports what's wrong with it (`python3 app/config.py`). Shape: `config.example.json`. |
+| `app/db.py` | Schema and helpers: `add_workstream`, `workstream`, `summary`, `update_workstream`, `decide`, `rejected`, `resolve_workstream`, `add_progress`, `add_ask`/`resolve_ask`, `add_followup`/`resolve_followup`, `add_item`/`update_item`, `propose_debrief`/`start_debrief`/`finish_debrief`/`dismiss_debrief`/`open_debriefs`, and the per-source bookkeeping `last_sweep`/`mark_sweep`, `channels`/`channel_add`/`channel_remove`, `mark_meeting_seen`/`seen_meeting_ids`. |
 | `app/server.py` | JSON API on **`127.0.0.1:5555`** (`port` in config), the only port interactive artifacts can reach. |
 | `app/app.template.html` | The UI. `app/build.py` embeds a data snapshot and writes `app/app.html`. |
 | `app/checks.py` | Done checks for asks and follow-ups (`check_spec` JSON). `list`, `verify [--apply]`, `precheck`. |
-| `app/sweep.py` | Sweep bookkeeping: watermarks, processed meetings, watched channels, `ensure-server`, and the `debrief-*` commands. |
+| `app/sweep.py` | Sweep bookkeeping, all per source: `sources`, `state <type\|source-id>`, `mark`, `seen`, watched channels, `ensure-server`, and the `debrief-*` commands. |
 | `app/launch.py` | Opens a new agent session from the server (the platform's `schedule_once` with no time = run now). The Debrief button needs it, because `platform.sendPrompt` can only write into the chat that is already open. `WSA_LAUNCH_DRY_RUN=1` prints the request instead. |
 | `app/suggest.py` | Adds suggested workstreams, with their first progress, asks and follow-ups, from a JSON file. |
 
 `WSA_DB` and `WSA_CONFIG` override the database and config paths (useful for tests).
 
-**API:** `GET /api/health`, `GET /api/summary`, `GET|PATCH /api/workstreams/:id` (id or ref, e.g. `W3`), `POST /api/workstreams/:id/approve`, `POST /api/workstreams/:id/reject` (`{reason}`), `GET /api/rejected`, `POST /api/workstreams/:id/items`, `PATCH /api/items/:id`, `POST /api/workstreams/:id/progress`, `POST /api/workstreams/:id/asks` (`{text, asked_by, source, url}`), `POST /api/asks/:id/done`, `POST /api/followups` (`{text, workstream_id?, waiting_on, next_step, source, url}`), `POST /api/followups/:id/done`, `GET /api/debriefs`, `POST /api/debriefs/:id/start` (opens the session, then marks it started; 502 and no state change if the platform can't be reached), `POST /api/debriefs/:id/dismiss` (`{reason}`).
+## Several input sources
+
+The input context is a list: any number of chat and meeting sources, each an entry in `config.json`'s `sources` with its own `id`. Everything per-source is keyed by that id — the sweep watermark, the watched channels, the processed meetings and each debrief — so sources never share state and ids from one never collide with another's. One schedule still covers all sources of a type; it loops over them and marks each as it finishes.
+
+A database written before this change is migrated on the next `db.connect()`: `seen_meetings` is rebuilt with a `source` column, `debriefs` gains one, the old `slack_channels` meta becomes `channels`, and the old `last_sweep_slack` / `last_sweep_meetings` watermarks are copied to the **first** source of each type (the one they referred to). Renaming a source's `id` in `config.json` starts that source's history over; nothing else changes.
+
+**API:** `GET /api/health`, `GET /api/summary`, `GET|PATCH /api/workstreams/:id` (id or ref, e.g. `W3`), `POST /api/workstreams/:id/approve`, `POST /api/workstreams/:id/reject` (`{reason}`), `GET /api/rejected`, `POST /api/workstreams/:id/items`, `PATCH /api/items/:id`, `POST /api/workstreams/:id/progress`, `POST /api/workstreams/:id/asks` (`{text, asked_by, source, url}`), `POST /api/asks/:id/done`, `POST /api/followups` (`{text, workstream_id?, waiting_on, next_step, source, url}`), `POST /api/followups/:id/done`, `GET /api/debriefs` (each with its `source` and `source_name`), `POST /api/debriefs/:id/start` (opens the session, then marks it started; 502 and no state change if the platform can't be reached), `POST /api/debriefs/:id/dismiss` (`{reason}`).
 
 ## Publishing
 

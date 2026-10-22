@@ -281,7 +281,7 @@ function renderDash(s) {
       <div class="db-main">
         <div class="ar-name">${d.url ? link(d.title, d.url) : esc(d.title)} ${d.state === 'started' ? `<span class="pill p-blue">Started ${esc(ago(d.started_at))}</span>` : ''}</div>
         ${d.why ? `<div class="ar-note">${esc(d.why)}</div>` : ''}
-        <div class="ar-meta" style="margin-top:4px">${d.meeting_ts ? esc(fmtDay(d.meeting_ts)) + ' · ' : ''}${d.workstreams ? 'touches ' + esc(d.workstreams) : 'workstreams not matched'}</div>
+        <div class="ar-meta" style="margin-top:4px">${d.meeting_ts ? esc(fmtDay(d.meeting_ts)) + ' · ' : ''}${d.source_name ? esc(d.source_name) + ' · ' : ''}${d.workstreams ? 'touches ' + esc(d.workstreams) : 'workstreams not matched'}</div>
       </div>
       <div class="sg-actions">
         <button class="primary" data-debrief="${d.id}" ${live ? '' : 'disabled'}>${d.state === 'started' ? 'Debrief again' : 'Debrief'}</button>

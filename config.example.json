@@ -2,14 +2,50 @@
   "owner": "Ada",
   "timezone": "Europe/Prague",
   "github_repo": "dam-agents/dam",
-  "slack": {
-    "user_id": "U0123456789",
-    "workspace_url": "https://acme.slack.com"
-  },
-  "meetings": {
-    "kind": "folder",
-    "location": "/home/agent/box/Meeting transcripts",
-    "url_template": ""
-  },
+  "sources": [
+    {
+      "id": "slack-acme",
+      "type": "chat",
+      "kind": "slack",
+      "name": "Acme Slack",
+      "tools": "Acme Slack",
+      "account": "U0123456789",
+      "location": "https://acme.slack.com"
+    },
+    {
+      "id": "slack-partner",
+      "type": "chat",
+      "kind": "slack",
+      "name": "Partner Slack",
+      "tools": "Partner Slack",
+      "account": "U0777777777",
+      "location": "https://partner.slack.com",
+      "note": "Partner workspace: ask before searching private channels."
+    },
+    {
+      "id": "teams",
+      "type": "chat",
+      "kind": "mcp",
+      "name": "Teams",
+      "tools": "Acme Teams",
+      "account": "ada@acme.com"
+    },
+    {
+      "id": "notetaker",
+      "type": "meetings",
+      "kind": "mcp",
+      "name": "Notetaker",
+      "tools": "Granola",
+      "location": "meetings",
+      "url_template": "https://notes.acme.com/r/{id}"
+    },
+    {
+      "id": "box-transcripts",
+      "type": "meetings",
+      "kind": "folder",
+      "name": "Box transcripts",
+      "location": "/home/agent/box/Meeting transcripts"
+    }
+  ],
   "port": 5555
 }

@@ -14,14 +14,17 @@ name: Workstream Assistant
 tagline: Helps you deliver every workstream's goal, day by day.
 description: >-
   Follows the workstreams you drive, each with a goal and an owner, and helps you
-  deliver them. It reads GitHub, Slack and meeting transcripts and turns them into
-  a live Workstreams app: each workstream's status, TL;DR and progress, the asks
-  that need you, and the follow-ups waiting on someone else. It suggests new
-  workstreams for you to approve or reject, and closes asks and follow-ups by
-  itself when GitHub shows they're done. Three weekday schedules keep it current:
-  an hourly Slack sweep, a meeting sweep every two hours, and a done-check run
-  every 20 minutes that only wakes the agent when something has finished. It never
-  posts, comments or changes anything outside its own sandbox without asking.
+  deliver them. It reads GitHub, your chat and your meeting transcripts and turns
+  them into a live Workstreams app: each workstream's status, TL;DR and progress,
+  the asks that need you, and the follow-ups waiting on someone else. Connect as
+  many input sources as you have — several Slack workspaces, a Teams or Discord
+  MCP server, a notetaker, a folder of transcripts — and it sweeps each one on its
+  own. It suggests new workstreams for you to approve or reject, and closes asks
+  and follow-ups by itself when GitHub shows they're done. Three weekday schedules
+  keep it current: an hourly chat sweep, a meeting sweep every two hours, and a
+  done-check run every 20 minutes that only wakes the agent when something has
+  finished. It never posts, comments or changes anything outside its own sandbox
+  without asking.
 category: productivity
 icon: target
 docsUrl: https://github.com/dam-agents/workstream-assistant/blob/main/README.md
@@ -44,26 +47,29 @@ connections:
     note: >-
       The main source: your messages, mentions of you, and the channels you watch.
       Connect it as your own Slack user, so the agent can search what you can see.
+      Grant one per workspace if your work spans several — each arrives as its own
+      named MCP server, and the agent sweeps each on its own watermark.
   - accepts: [mcp-server]
     required: false
     note: >-
-      A meeting-transcript MCP server. Optional: transcripts can also come from a
-      mounted folder, a GitHub repository or chat uploads, or not at all. Onboarding
-      asks which.
+      Any other input source with an MCP server: a meeting notetaker, or a messenger
+      such as Teams or Discord. Grant as many as you use. Transcripts can also come
+      from a mounted folder, a GitHub repository or chat uploads, or not at all.
+      Onboarding asks which sources you have.
 
 schedules:
-  - name: "Workstream Assistant: Slack sweep"
-    description: Reads new Slack activity every weekday hour and updates workstreams, asks and follow-ups.
+  - name: "Workstream Assistant: chat sweep"
+    description: Reads new activity in every connected chat source every weekday hour and updates workstreams, asks and follow-ups.
     rrule: FREQ=HOURLY;BYDAY=MO,TU,WE,TH,FR;BYHOUR=8,9,10,11,12,13,14,15,16,17,18;BYMINUTE=7
     timezone: Europe/Prague
     sessionMode: fresh
-    precheck: python3 /home/agent/work/app/sweep.py ensure-server >&2; python3 /home/agent/work/app/sweep.py state slack
+    precheck: python3 /home/agent/work/app/sweep.py ensure-server >&2; python3 /home/agent/work/app/sweep.py state chat
     task: >-
-      Workstream Assistant: Slack sweep. Read /home/agent/work/AGENTS.md, then follow
-      /home/agent/work/procedures/slack-sweep.md exactly. The precheck output below is
+      Workstream Assistant: chat sweep. Read /home/agent/work/AGENTS.md, then follow
+      /home/agent/work/procedures/chat-sweep.md exactly. The precheck output below is
       the input it refers to.
   - name: "Workstream Assistant: meeting sweep"
-    description: Reads new meeting transcripts every two hours on weekdays and updates the workstreams they touch.
+    description: Reads new transcripts from every meeting source every two hours on weekdays and proposes the ones worth a debrief.
     rrule: FREQ=HOURLY;INTERVAL=2;BYDAY=MO,TU,WE,TH,FR;BYHOUR=9,11,13,15,17,19;BYMINUTE=37
     timezone: Europe/Prague
     sessionMode: fresh
