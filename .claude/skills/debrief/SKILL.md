@@ -3,7 +3,7 @@ name: debrief
 description: >-
   Talk through a meeting with the owner to agree how their working context changes:
   which workstreams move, what they now owe, what was decided, what got contradicted.
-  Use when a session starts with "Debrief of the meeting …" (the owner clicked Debrief on the dashboard),
+  Use when a message says "Debrief of the meeting …" (the owner clicked Debrief on the dashboard),
   when the owner says "debrief", "let's debrief <meeting>", or uploads a transcript, or tells you about a call that was not recorded.
   It is a conversation, not a silent update: propose the changes, discuss them, then write only what was agreed.
 ---
@@ -15,7 +15,7 @@ The debrief is a short conversation where you and the owner agree how the workin
 
 ## How a debrief starts
 
-- **From the dashboard.** The meeting sweep does not touch the workstreams. It only *proposes* the meeting: a row under **Debriefs** with a **Debrief** button. The owner clicks it when they have time, and that opens a new session whose first message names the meeting. This is that session.
+- **From the dashboard.** The meeting sweep does not touch the workstreams. It only *proposes* the meeting: a row under **Debriefs** with a **Debrief** button. The owner clicks it when they have time, and that sends a message into the chat naming the meeting and its debrief id. The row is already marked started.
 - **From the owner**, in any chat: "debrief the call with Cleo", a transcript they upload, or a few words about a call nobody recorded. Create the row yourself so the dashboard stays true:
   `python3 app/sweep.py debrief-propose <id> "<title>" --source <source-id> [--url …] [--why …]`, then `python3 app/sweep.py debrief-start <id>`. `--source` is the meeting source it came from (`python3 app/sweep.py sources` lists them); it can be left out only when the owner has exactly one.
 

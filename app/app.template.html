@@ -311,12 +311,16 @@ function renderDash(s) {
 
 function bindDebriefs() {
   document.querySelectorAll('[data-debrief]').forEach((b) => b.onclick = async () => {
-    b.disabled = true; b.textContent = 'Opening…';
+    if (typeof platform === 'undefined' || !platform.sendPrompt) {
+      showBanner('warn', 'The Debrief button works only in the docked preview beside the chat.');
+      return;
+    }
+    b.disabled = true;
     try {
-      await api('POST', `/api/debriefs/${b.dataset.debrief}/start`);
+      const d = await api('POST', `/api/debriefs/${b.dataset.debrief}/start`);
+      platform.sendPrompt(d.prompt);
       await load();
-      showBanner('ok', 'Debrief session opened. Find it in your session list, titled “Debrief: …”, and talk it through there.');
-    } catch (e) { showBanner('err', `Couldn't open the debrief: ${esc(e.message)}`); b.disabled = false; b.textContent = 'Debrief'; }
+    } catch (e) { showBanner('err', `Couldn't start the debrief: ${esc(e.message)}`); b.disabled = false; }
   });
   document.querySelectorAll('[data-dismiss-debrief]').forEach((b) => b.onclick = async () => {
     b.disabled = true;

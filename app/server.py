@@ -5,7 +5,6 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
 import db
-import launch
 from config import CFG
 
 ROUTES = []
@@ -111,19 +110,25 @@ def get_debriefs(conn, body):
     return 200, db.open_debriefs(conn)
 
 
+def debrief_prompt(d):
+    """The prompt the Debrief button sends into the open chat."""
+    return (
+        f"Debrief of the meeting “{d['title']}”{f" from {d['source_name']}" if d.get('source_name') else ''} (debrief #{d['id']}). "
+        f"Follow the debrief skill, /home/agent/work/.claude/skills/debrief/SKILL.md, for this meeting. "
+        f"Start with `python3 /home/agent/work/app/sweep.py debrief-show {d['id']}`, which prints the meeting and where its transcript is. "
+        f"Talk it through with me before writing anything beyond what the skill allows.")
+
+
 @route("POST", r"/api/debriefs/(?P<debrief_id>\d+)/start")
 def start_debrief(conn, body, debrief_id):
-    """Open a new agent session that debriefs the meeting with the owner. The state changes only once the session exists."""
+    """Mark the debrief started and return the prompt the page sends into the chat."""
     d = db.get_debrief(conn, debrief_id)
     if not d:
         return 404, {"error": "no such debrief"}
     if d["state"] in ("done", "dismissed"):
         return 409, {"error": f"this debrief is already {d['state']}"}
-    try:
-        launch.start_debrief_session(d)
-    except RuntimeError as e:
-        return 502, {"error": f"couldn't open the session: {e}"}
-    return 200, db.start_debrief(conn, debrief_id)
+    d = db.start_debrief(conn, debrief_id)
+    return 200, {**d, "prompt": debrief_prompt(d)}
 
 
 @route("POST", r"/api/debriefs/(?P<debrief_id>\d+)/dismiss")
