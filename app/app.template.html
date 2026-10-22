@@ -34,6 +34,7 @@
   .banner { margin:14px 0 0; padding:10px 14px; border-radius:8px; font-size:13px; display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
   .banner.warn { background:var(--amber-bg); color:var(--amber); }
   .banner.err { background:var(--red-bg); color:var(--red); }
+  .banner.ok { background:var(--green-bg); color:var(--green); }
   h2 { font-size:15px; margin:30px 0 10px; display:flex; align-items:baseline; gap:8px; }
   h2 .c { color:var(--muted); font-weight:400; font-size:13px; }
   .muted { color:var(--muted); }
@@ -136,6 +137,11 @@
   a.item-link:hover { color:var(--blue); text-decoration-color:var(--blue); }
   .src-tag { font-size:11px; color:var(--blue); white-space:nowrap; }
   .src-tag.missing { color:var(--amber); }
+  .db-list { border:1px solid var(--blue); border-radius:10px; overflow:hidden; }
+  .db { display:grid; grid-template-columns:1fr auto; gap:8px 16px; align-items:center; padding:14px 16px; border-bottom:1px solid var(--border); background:var(--blue-bg); }
+  .db:last-child { border-bottom:0; }
+  .db .ar-note { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  @media (max-width:640px) { .db { grid-template-columns:1fr; } }
 </style>
 </head>
 <body>
@@ -270,18 +276,48 @@ function renderDash(s) {
         <button type="button" class="danger">Reject</button><button type="button" data-cancel>Cancel</button>
       </div>
     </div>`).join('');
+  const debs = (s.debriefs || []).map((d) => `
+    <div class="db">
+      <div class="db-main">
+        <div class="ar-name">${d.url ? link(d.title, d.url) : esc(d.title)} ${d.state === 'started' ? `<span class="pill p-blue">Started ${esc(ago(d.started_at))}</span>` : ''}</div>
+        ${d.why ? `<div class="ar-note">${esc(d.why)}</div>` : ''}
+        <div class="ar-meta" style="margin-top:4px">${d.meeting_ts ? esc(fmtDay(d.meeting_ts)) + ' · ' : ''}${d.workstreams ? 'touches ' + esc(d.workstreams) : 'workstreams not matched'}</div>
+      </div>
+      <div class="sg-actions">
+        <button class="primary" data-debrief="${d.id}" ${live ? '' : 'disabled'}>${d.state === 'started' ? 'Debrief again' : 'Debrief'}</button>
+        <button data-dismiss-debrief="${d.id}" ${live ? '' : 'disabled'}>Dismiss</button>
+      </div>
+    </div>`).join('');
   const loose = s.followups || [];
   const looseMine = loose.filter((x) => x.waiting_on === s.me).length;
   const needN = list.reduce((n, a) => n + a.asks_open, 0) + looseMine, needA = list.filter((a) => a.asks_open).length;
   const needLine = needN ? `<div class="needs-line"><b>${needN} thing${needN > 1 ? 's' : ''} need${needN > 1 ? '' : 's'} you</b> in ${needA} workstream${needA > 1 ? 's' : ''}</div>` : '';
   $('view').innerHTML = needLine +
+    (debs ? `<h2>Debriefs <span class="c">${s.debriefs.length} meeting${s.debriefs.length > 1 ? 's' : ''} to talk through</span></h2><div class="db-list">${debs}</div>` : '') +
     (rows ? `<div class="ws-list">${rows}</div>` : '<div class="empty">No workstreams yet. Ask the agent to suggest some.</div>') +
     `<h2>Follow-ups <span class="c">${loose.length ? loose.length + ' not tied to a workstream' : 'none outside workstreams'}</span></h2>` +
     (loose.length ? `<div class="sm-list">${loose.map(followupRow).join('')}</div>` : '<div class="empty" style="padding:4px 0">Quick open loops you start on Slack or in meetings show up here. Ones that belong to a workstream are shown in that workstream.</div>') +
     (sugg ? `<h2>Suggested workstreams <span class="c">${s.suggested.length} waiting for your approval</span></h2><div class="sg-list">${sugg}</div>` : '');
   bindSuggestions();
+  bindDebriefs();
   bindFollowups();
   bindWorkstreamLinks();
+}
+
+function bindDebriefs() {
+  document.querySelectorAll('[data-debrief]').forEach((b) => b.onclick = async () => {
+    b.disabled = true; b.textContent = 'Opening…';
+    try {
+      await api('POST', `/api/debriefs/${b.dataset.debrief}/start`);
+      await load();
+      showBanner('ok', 'Debrief session opened. Find it in your session list, titled “Debrief: …”, and talk it through there.');
+    } catch (e) { showBanner('err', `Couldn't open the debrief: ${esc(e.message)}`); b.disabled = false; b.textContent = 'Debrief'; }
+  });
+  document.querySelectorAll('[data-dismiss-debrief]').forEach((b) => b.onclick = async () => {
+    b.disabled = true;
+    try { await api('POST', `/api/debriefs/${b.dataset.dismissDebrief}/dismiss`); await load(); }
+    catch (e) { showBanner('err', `Couldn't save: ${esc(e.message)}`); b.disabled = false; }
+  });
 }
 
 function bindSuggestions() {

@@ -114,6 +114,20 @@ CREATE TABLE IF NOT EXISTS seen_meetings (
   relevant     INTEGER NOT NULL DEFAULT 0,   -- 1 if it changed a workstream
   seen_at      TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS debriefs (
+  id            INTEGER PRIMARY KEY,
+  recording_id  TEXT NOT NULL UNIQUE,          -- the meeting's id, as in seen_meetings
+  title         TEXT NOT NULL,
+  meeting_ts    TEXT,                          -- when the meeting happened
+  url           TEXT,                          -- the recording / transcript
+  why           TEXT NOT NULL DEFAULT '',      -- one line: what in it touches the owner's workstreams
+  workstreams   TEXT NOT NULL DEFAULT '',      -- refs it seems to touch, e.g. "W1, W3"
+  state         TEXT NOT NULL DEFAULT 'proposed' CHECK (state IN ('proposed','started','done','dismissed')),
+  proposed_at   TEXT NOT NULL,
+  started_at    TEXT,
+  closed_at     TEXT,
+  outcome       TEXT NOT NULL DEFAULT ''       -- one line, written when the debrief is done
+);
 CREATE INDEX IF NOT EXISTS items_ws ON items(workstream_id);
 CREATE INDEX IF NOT EXISTS asks_ws ON asks(workstream_id);
 CREATE INDEX IF NOT EXISTS progress_ws_ts ON progress(workstream_id, ts);
@@ -227,7 +241,7 @@ def summary(conn):
     loose = rows(conn.execute(
         "SELECT * FROM followups WHERE workstream_id IS NULL AND done_at IS NULL ORDER BY (waiting_on = ?) DESC, ts", (ME,)))
     return {"me": ME, "github_repo": CFG["github_repo"], "generated_at": now(),
-            "workstreams": tracked, "suggested": suggested, "followups": loose}
+            "workstreams": tracked, "suggested": suggested, "followups": loose, "debriefs": open_debriefs(conn)}
 
 
 def workstream(conn, ws_id):
@@ -393,3 +407,55 @@ def mark_meeting_seen(conn, recording_id, title="", relevant=False):
 
 def seen_meeting_ids(conn):
     return {r["recording_id"] for r in conn.execute("SELECT recording_id FROM seen_meetings")}
+
+
+# ---- Debriefs: a meeting the sweep proposes and the owner chooses to talk through ----
+
+def propose_debrief(conn, recording_id, title, meeting_ts=None, url=None, why="", workstreams=""):
+    """Offer a meeting for debrief. It shows on the dashboard until the owner starts or dismisses it.
+    Also marks the meeting as seen, so the sweep never proposes it twice. Returns the debrief id."""
+    _need_link("debrief", title, url)
+    conn.execute(
+        """INSERT INTO debriefs (recording_id, title, meeting_ts, url, why, workstreams, proposed_at)
+           VALUES (?,?,?,?,?,?,?) ON CONFLICT(recording_id) DO NOTHING""",
+        (str(recording_id), title, meeting_ts, url, why, workstreams, now()))
+    conn.commit()
+    mark_meeting_seen(conn, str(recording_id), title, True)
+    return conn.execute("SELECT id FROM debriefs WHERE recording_id = ?", (str(recording_id),)).fetchone()["id"]
+
+
+def open_debriefs(conn):
+    """Proposed and started debriefs, newest meeting first: what the dashboard shows."""
+    return rows(conn.execute(
+        "SELECT * FROM debriefs WHERE state IN ('proposed','started') ORDER BY COALESCE(meeting_ts, proposed_at) DESC"))
+
+
+def get_debrief(conn, debrief_id):
+    r = conn.execute("SELECT * FROM debriefs WHERE id = ?", (int(debrief_id),)).fetchone()
+    return dict(r) if r else None
+
+
+def _set_debrief(conn, debrief_id, state, outcome=None):
+    ts = now()
+    sets, args = ["state = ?"], [state]
+    if state == "started":
+        sets.append("started_at = ?"); args.append(ts)
+    if state in ("done", "dismissed"):
+        sets.append("closed_at = ?"); args.append(ts)
+    if outcome is not None:
+        sets.append("outcome = ?"); args.append(outcome)
+    cur = conn.execute(f"UPDATE debriefs SET {', '.join(sets)} WHERE id = ?", (*args, int(debrief_id)))
+    conn.commit()
+    return get_debrief(conn, debrief_id) if cur.rowcount else None
+
+
+def start_debrief(conn, debrief_id):
+    return _set_debrief(conn, debrief_id, "started")
+
+
+def finish_debrief(conn, debrief_id, outcome=""):
+    return _set_debrief(conn, debrief_id, "done", outcome)
+
+
+def dismiss_debrief(conn, debrief_id, outcome=""):
+    return _set_debrief(conn, debrief_id, "dismissed", outcome)

@@ -2,6 +2,12 @@
   python3 app/sweep.py state slack|meetings   print what the next sweep needs; also the schedules' precheck
   python3 app/sweep.py mark slack|meetings    set the watermark to now (call at the END of a successful sweep)
   python3 app/sweep.py seen <recording_id> [title] [relevant 0|1]   recording_id: the source's id, or the file path
+  python3 app/sweep.py debrief-propose <recording_id> <title> [--when ISO] [--url URL] [--why TEXT] [--ws "W1, W3"]
+                                              offer a meeting for debrief on the dashboard (also marks it seen)
+  python3 app/sweep.py debrief-show <id>      the meeting, why it was proposed, and where its transcript is
+  python3 app/sweep.py debrief-start <id>     mark it started (the dashboard button does this; use it for a transcript uploaded in chat)
+  python3 app/sweep.py debrief-done <id> [outcome]      the debrief is finished; one line on what changed
+  python3 app/sweep.py debrief-dismiss <id> [reason]    the owner doesn't want it
   python3 app/sweep.py ensure-server          start the API server if it isn't answering
   python3 app/sweep.py channels               list the watched Slack channels
   python3 app/sweep.py channel-add <id> <name> / channel-remove <id>
@@ -79,6 +85,11 @@ def main():
                 for f in new:
                     print(f"  - {f}")
             print(f"Already processed meetings ({len(seen)}): {', '.join(sorted(seen))}")
+            ods = db.open_debriefs(conn)
+            if ods:
+                print(f"Debriefs still open on the dashboard ({len(ods)}); don't propose these again:")
+                for d in ods:
+                    print(f"  - #{d['id']} {d['state']}: {d['title']} ({d['recording_id']})")
         rej = db.rejected(conn)
         if rej:
             print("Rejected workstreams (never re-suggest): " + "; ".join(
@@ -90,6 +101,33 @@ def main():
         db.mark_meeting_seen(conn, sys.argv[2], sys.argv[3] if len(sys.argv) > 3 else "",
                              len(sys.argv) > 4 and sys.argv[4] == "1")
         print("ok")
+    elif cmd == "debrief-propose":
+        import argparse
+        ap = argparse.ArgumentParser(prog="sweep.py debrief-propose")
+        ap.add_argument("recording_id"); ap.add_argument("title")
+        ap.add_argument("--when"); ap.add_argument("--url"); ap.add_argument("--why", default=""); ap.add_argument("--ws", default="")
+        a = ap.parse_args(sys.argv[2:])
+        print(f"debrief #{db.propose_debrief(conn, a.recording_id, a.title, a.when, a.url, a.why, a.ws)} proposed")
+    elif cmd == "debrief-show":
+        d = db.get_debrief(conn, sys.argv[2])
+        if not d:
+            sys.exit(f"no debrief {sys.argv[2]}")
+        mt = CFG["meetings"]
+        print(f"Debrief #{d['id']} ({d['state']}): {d['title']}")
+        print(f"Meeting time: {d['meeting_ts'] or 'unknown'}")
+        print(f"Recording: {d['url'] or '(no link)'}")
+        print(f"Why it was proposed: {d['why'] or '(no reason given)'}")
+        print(f"Workstreams it seems to touch: {d['workstreams'] or '(not said)'}")
+        print(f"Recording id: {d['recording_id']}")
+        where = {"mcp": f"fetch it from the MCP server “{mt['location']}” by that id",
+                 "folder": f"read the file {os.path.join(mt['location'], d['recording_id'])}",
+                 "github": f"fetch {d['recording_id']} from {mt['location']} with gh",
+                 "upload": "the owner uploaded it in chat: read the file they sent"}.get(mt["kind"], "no transcript source configured: ask the owner what happened")
+        print(f"Transcript: {where}")
+    elif cmd in ("debrief-start", "debrief-done", "debrief-dismiss"):
+        fn = {"debrief-start": db.start_debrief, "debrief-done": db.finish_debrief, "debrief-dismiss": db.dismiss_debrief}[cmd]
+        d = fn(conn, sys.argv[2]) if cmd == "debrief-start" else fn(conn, sys.argv[2], " ".join(sys.argv[3:]))
+        print(f"debrief #{d['id']} {d['state']}" if d else f"no debrief {sys.argv[2]}")
     elif cmd == "ensure-server":
         if not server_up():
             subprocess.Popen(["python3", os.path.join(HERE, "server.py")], cwd=HERE,
