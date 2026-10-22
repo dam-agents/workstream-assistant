@@ -5,6 +5,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse
 
 import db
+import launch
 from config import CFG
 
 ROUTES = []
@@ -103,6 +104,32 @@ def post_progress(conn, body, ws_id):
     entry_id = db.add_progress(conn, ws_id, body["summary"], body.get("ts"), body.get("type", "message"),
                                body.get("outcome", "info"), body.get("url"))
     return 201, {"id": entry_id}
+
+
+@route("GET", r"/api/debriefs")
+def get_debriefs(conn, body):
+    return 200, db.open_debriefs(conn)
+
+
+@route("POST", r"/api/debriefs/(?P<debrief_id>\d+)/start")
+def start_debrief(conn, body, debrief_id):
+    """Open a new agent session that debriefs the meeting with the owner. The state changes only once the session exists."""
+    d = db.get_debrief(conn, debrief_id)
+    if not d:
+        return 404, {"error": "no such debrief"}
+    if d["state"] in ("done", "dismissed"):
+        return 409, {"error": f"this debrief is already {d['state']}"}
+    try:
+        launch.start_debrief_session(d)
+    except RuntimeError as e:
+        return 502, {"error": f"couldn't open the session: {e}"}
+    return 200, db.start_debrief(conn, debrief_id)
+
+
+@route("POST", r"/api/debriefs/(?P<debrief_id>\d+)/dismiss")
+def dismiss_debrief(conn, body, debrief_id):
+    d = db.dismiss_debrief(conn, debrief_id, (body.get("reason") or "").strip())
+    return (200, d) if d else (404, {"error": "no such debrief"})
 
 
 class Handler(BaseHTTPRequestHandler):
