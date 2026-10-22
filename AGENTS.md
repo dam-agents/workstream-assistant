@@ -163,6 +163,13 @@ The **Workstreams** artifact (interactive, private) reads live data from SQLite 
 - **Update data** with the helpers in `app/db.py`: `add_workstream`, `update_workstream`, `add_progress`, `add_ask`/`resolve_ask`, `add_followup`/`resolve_followup` (give asks and follow-ups a `check_spec`/`done_when`), `add_item`/`update_item`, `rejected`. No republish needed.
 - **Server down?** `python3 app/sweep.py ensure-server`.
 
+## Kit Updates and the changelog
+
+[`CHANGELOG.md`](CHANGELOG.md) says what each kit change did and what an existing instance must do afterwards.
+
+- **After a Kit Update**, read the entries the update brought in: compare the commit you were on before with the new one (`git log --merges <old>..HEAD`), and do every **After updating** step they list, such as republishing the app or recreating a schedule. Then tell the owner in a few lines what's new.
+- **Changing the kit:** every pull request adds an entry under **Unreleased** in `CHANGELOG.md`, in the same pull request. It says what changed for the owner and, under **After updating**, what an existing instance has to do (republish the app, recreate a schedule, migrate config). Leave that line out only when there's nothing to do. A change to `app/app.template.html` always needs "republish the app".
+
 ## Files that are mine, not the kit's
 
 `config.json` and `data/` are this instance's own and git-ignored. Everything else comes from the kit; a Kit Update may change it. Keep instance-specific knowledge in `config.json`, the database, or memory, not in the tracked files.
