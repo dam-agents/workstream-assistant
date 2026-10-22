@@ -161,6 +161,7 @@
 <script id="snapshot" type="application/json">__SNAPSHOT__</script>
 <script>
 const SNAP = JSON.parse(document.getElementById('snapshot').textContent);
+const PAGE_VERSION = '__VERSION__';  // the template this page was built from; build.py fills it in
 const STATUS = {
   todo: ['To do', 'p-grey'], in_progress: ['In progress', 'p-blue'], blocked: ['Blocked', 'p-red'],
   done: ['Done', 'p-green'], unknown: ['Unknown', 'p-grey'],
@@ -193,6 +194,7 @@ function hasPlatform() { return typeof platform !== 'undefined' && platform && t
 
 async function api(method, path, body) {
   if (!hasPlatform()) throw Object.assign(new Error('no platform'), { reason: 'no-platform' });
+  path += (path.includes('?') ? '&' : '?') + 'page=' + PAGE_VERSION;
   const res = await platform.request({ method, path, ...(body ? { body: JSON.stringify(body) } : {}) });
   let data = null;
   try { data = JSON.parse(res.body); } catch { /* non-JSON */ }
@@ -225,7 +227,10 @@ async function load() {
     const data = route.view === 'ws' ? await api('GET', `/api/workstreams/${route.id}`) : await api('GET', '/api/summary');
     live = true;
     setConn('live', 'Live');
-    showBanner('', '');
+    const stale = data.app_version && data.app_version !== PAGE_VERSION;  // a Kit Update changed the template since this page was published
+    showBanner('warn', stale ? 'This page is out of date: the app was updated since it was published, so some sections may be missing. <button id="republish">Ask agent to republish</button>' : '');
+    const rp = $('republish');
+    if (rp) rp.onclick = () => platform.sendPrompt('The Workstreams page is out of date. Rebuild and republish it (app/README.md, Publishing).');
     render(data);
   } catch (err) {
     live = false;

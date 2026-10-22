@@ -290,7 +290,7 @@ def summary(conn):
         w["stale"] = last is None or last < stale_before
     loose = rows(conn.execute(
         "SELECT * FROM followups WHERE workstream_id IS NULL AND done_at IS NULL ORDER BY (waiting_on = ?) DESC, ts", (ME,)))
-    return {"me": ME, "github_repo": CFG["github_repo"], "generated_at": now(),
+    return {"me": ME, "github_repo": CFG["github_repo"], "generated_at": now(), "app_version": template_version(),
             "workstreams": tracked, "suggested": suggested, "followups": loose, "debriefs": open_debriefs(conn)}
 
 
@@ -437,6 +437,32 @@ def resolve_followup(conn, followup_id):
                      (f["workstream_id"], ts, "update", "done", f"Done: {f['text']}"))
     conn.commit()
     return dict(conn.execute("SELECT * FROM followups WHERE id = ?", (followup_id,)).fetchone())
+
+
+TEMPLATE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "app.template.html")
+
+
+def template_version():
+    """Short hash of app.template.html. build.py stamps it into the page; the page sends it back with every request."""
+    import hashlib
+    with open(TEMPLATE, "rb") as f:
+        return hashlib.sha256(f.read()).hexdigest()[:12]
+
+
+def page_status(conn):
+    """(ok, line) on whether the published page was built from the template on disk.
+    A Kit Update can change the template without anything republishing the artifact, which leaves the page behind."""
+    want = template_version()
+    seen, seen_at = get_meta(conn, "page_version"), get_meta(conn, "page_seen_at")
+    built = get_meta(conn, "built_version")
+    if seen:
+        if seen == want:
+            return True, f"App page: up to date (last opened {seen_at})"
+        return False, (f"App page: STALE. The page last opened ({seen_at}) was built from template {seen}, the template on disk is {want}. "
+                       "Rebuild and republish it (app/README.md, Publishing).")
+    if built and built != want:
+        return False, f"App page: STALE. The last build was from template {built}, the template on disk is {want}. Rebuild and republish it."
+    return True, "App page: not opened since this check was added; can't tell whether it's current"
 
 
 def get_meta(conn, key, default=""):

@@ -8,6 +8,12 @@ New entries go under **Unreleased** in the pull request that makes the change (s
 
 ## Unreleased
 
+### The app page knows when a Kit Update left it behind ([#7](https://github.com/dam-agents/workstream-assistant/pull/7))
+
+- The page carries the version of the template it was built from. When the template on disk is newer, the page shows an **out of date** banner with **Ask agent to republish**, and `ensure-server` and every sweep's precheck print `App page: STALE`.
+
+**After updating:** republish the app once. Pages published before this change carry no version, so the check can't tell until then.
+
 ## 2026-10-22
 
 ### The input context is a list of sources ([#6](https://github.com/dam-agents/workstream-assistant/pull/6))
