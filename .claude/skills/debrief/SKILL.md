@@ -17,7 +17,7 @@ The debrief is a short conversation where you and the owner agree how the workin
 
 - **From the dashboard.** The meeting sweep does not touch the workstreams. It only *proposes* the meeting: a row under **Debriefs** with a **Debrief** button. The owner clicks it when they have time, and that opens a new session whose first message names the meeting. This is that session.
 - **From the owner**, in any chat: "debrief the call with Cleo", a transcript they upload, or a few words about a call nobody recorded. Create the row yourself so the dashboard stays true:
-  `python3 app/sweep.py debrief-propose <id> "<title>" [--url …] [--why …]`, then `python3 app/sweep.py debrief-start <id>`.
+  `python3 app/sweep.py debrief-propose <id> "<title>" --source <source-id> [--url …] [--why …]`, then `python3 app/sweep.py debrief-start <id>`. `--source` is the meeting source it came from (`python3 app/sweep.py sources` lists them); it can be left out only when the owner has exactly one.
 
 ## What a debrief is not
 
@@ -43,10 +43,10 @@ If you are unsure which column a change belongs in, it belongs in the right one.
 
 ### 1. Prepare, silently
 
-- Run `python3 app/sweep.py debrief-show <id>`. It prints the meeting, why it was proposed, the workstreams it seems to touch (the sweep's guess, not a fact) and where the transcript is.
-- Transcript available (any `meetings.kind`: `mcp`, `folder`, `github`, or one the owner uploaded in chat): read it, in chunks if long. Note `speakers unconfirmed` if the source says so.
+- Run `python3 app/sweep.py debrief-show <id>`. It prints the meeting, which **source** it came from, why it was proposed, the workstreams it seems to touch (the sweep's guess, not a fact) and where the transcript is.
+- Transcript available (any source kind: `mcp`, `folder`, `github`, or one the owner uploaded in chat): read it, in chunks if long. For an `mcp` source, use the tools of **that** source's server, named in its `tools`; another notetaker's tools don't know this recording id. Note `speakers unconfirmed` if the source says so.
 - No transcript (a call nobody recorded, a hallway chat): ask the owner to say in a few sentences what happened, who was there and when, then continue from step 2. Treat it as the owner's word; the progress entry says so, and its `source` names it as the owner's account.
-- Load the context the meeting touches: `python3 app/sweep.py state meetings`, the workstreams it names (`db.workstream`), their open asks and follow-ups (`python3 app/checks.py list`), and the rejected list (`db.rejected`).
+- Load the context the meeting touches: `python3 app/sweep.py state meetings`, the workstreams it names (`db.workstream`), their open asks and follow-ups (`python3 app/checks.py list`), and the rejected list (`db.rejected`). The owner's workstreams may also live in other sources: an ask from this meeting can close a follow-up first seen in any chat source.
 - Skip what is not about the owner's workstreams ("Stay on topic" in AGENTS.md).
 - Write nothing yet.
 
@@ -80,6 +80,8 @@ Stop when they have nothing more to change. Do not extend the conversation to fe
 ### 4. Apply only what was agreed
 
 First the fact: add the `meeting` progress entry to each workstream the owner confirmed it touched. Then use the `app/db.py` helpers:
+
+Name the meeting's source at the start of each `source` field ("Notetaker: weekly sync", "Box transcripts: 2026-10-20 QA call"), so the owner can tell which tool it came from.
 
 | Agreed change | Helper |
 |---|---|

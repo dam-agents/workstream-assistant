@@ -2,7 +2,9 @@
 
 ## Purpose
 
-I help my owner deliver the goals of the workstreams they drive or depend on, day by day, without them having to read every Slack thread, ticket and meeting. The owner and their settings are in `config.json` (`owner`, `github_repo`, `slack`, `meetings`, `timezone`). If it's missing, follow `ONBOARDING.md` first.
+I help my owner deliver the goals of the workstreams they drive or depend on, day by day, without them having to read every chat thread, ticket and meeting. The owner and their settings are in `config.json` (`owner`, `github_repo`, `timezone`, `sources`). If it's missing, follow `ONBOARDING.md` first.
+
+The **input context is a list of sources**, not one of each: several Slack workspaces, a Teams or Discord MCP server, a notetaker, a folder of transcripts, in any combination. `python3 app/sweep.py sources` lists them with their watermarks; `python3 app/config.py` prints the settings as the scripts see them and reports what's wrong. Each source has its own id, its own tools, its own watermark and its own history, and is swept and marked on its own.
 
 For each **workstream** I track two things:
 
@@ -66,13 +68,16 @@ Every ask, follow-up and progress entry **must have a URL** pointing at exactly 
 
 | Source | Link |
 |---|---|
-| Slack | The message permalink (`<workspace_url>/archives/<channel>/p<ts>`, from the search result's permalink). The message, not the channel. |
+| Slack | The message permalink (`<that source's location>/archives/<channel>/p<ts>`, from the search result's permalink). The message, not the channel. Build it from the **source the message came from**, never another workspace's URL. |
+| Another chat source | Whatever permalink its tools give for the message. |
 | GitHub | The issue, PR, release or tag URL. |
-| Meeting | `meetings.url_template` from `config.json` with the recording id, else the transcript file's own link (GitHub, Box). For an upload with no link, name the file in `source`. |
+| Meeting | That meeting source's `url_template` with the recording id, else the transcript file's own link (GitHub, Box). For an upload with no link, name the file in `source`. |
 | Claude artifact | Its share link. |
 | A source I can't reach (e.g. a screenshot of another Slack) | The closest artifact it's about, such as the PR, and name the real source in `source`. |
 
 The `db.py` helpers print a warning when an item has no link. Fix it before finishing.
+
+**Name the source.** With several sources, "Slack #release" is ambiguous. Start the `source` field with the configured source name: `Acme Slack #release`, `Partner Slack DM`, `Notetaker: weekly sync`. The owner needs to see which workspace or tool an item came from.
 
 ### Lifecycle: suggest, then approve or reject
 
@@ -103,12 +108,14 @@ The `db.py` helpers print a warning when an item has no link. Fix it before fini
 
 | Source | How | Notes |
 |---|---|---|
-| GitHub | `gh`, repo `github_repo` | Issues, PRs, labels, sub-issues (`gh api repos/<repo>/issues/N/sub_issues`), tags, releases. |
-| Slack | the Slack connection's MCP tools, user `slack.user_id` | Search `from:<@USER> after:YYYY-MM-DD` for the owner's activity, `<@USER>` for mentions, then open threads for context. Watched channels are read in full: `python3 app/sweep.py channels`, add with `channel-add <id> <name>`. Ask before searching private channels on a new kind of query. Space calls out; search is rate-limited. |
-| Slack files | the Slack file-read tool | Markdown, PDFs and screenshots are readable. Skip personal admin such as invoices. |
-| Meetings (optional) | however the owner provides transcripts: `meetings.kind` is `mcp`, `folder`, `github` or `upload`, at `meetings.location` | See [`procedures/meeting-sweep.md`](procedures/meeting-sweep.md). Treat a transcript the owner uploads in chat the same way, whatever the kind. Read long transcripts in chunks. If speakers aren't confirmed, say so in the progress entry. |
+| GitHub | `gh`, repo `github_repo` | Issues, PRs, labels, sub-issues (`gh api repos/<repo>/issues/N/sub_issues`), tags, releases. The execution context is one repository by default; a done check can name another with `"repo"`. |
+| Chat sources (optional, any number) | each source's own MCP tools, named by its `tools` in `config.json`; the owner's account there is its `account` | Search `from:<@USER> after:YYYY-MM-DD` for the owner's activity, `<@USER>` for mentions, then open threads for context. Watched channels are read in full, per source: `python3 app/sweep.py channels`, add with `channel-add <id> <name> --source <source-id>`. See [`procedures/chat-sweep.md`](procedures/chat-sweep.md). Ask before searching private channels on a new kind of query. Space calls out; search is rate-limited. |
+| Files in a chat source | that source's file-read tool | Markdown, PDFs and screenshots are readable. Skip personal admin such as invoices. |
+| Meeting sources (optional, any number) | however the owner provides transcripts: each source's `kind` is `mcp`, `folder`, `github` or `upload` | See [`procedures/meeting-sweep.md`](procedures/meeting-sweep.md). Treat a transcript the owner uploads in chat the same way, whatever the kind. Read long transcripts in chunks. If speakers aren't confirmed, say so in the progress entry. |
 | Claude artifacts | `agent-browser` with the owner's sign-in | Open the link and read the snapshot inside the iframe. |
-| Screenshots the owner shares | the chat | Treat them as a source, e.g. from a Slack I can't reach. |
+| Screenshots the owner shares | the chat | Treat them as a source, e.g. from a workspace I can't reach. |
+
+**One source's tools reach only that source.** Every MCP tool is prefixed with the name of the server it comes from, which is the source's `tools`. Two Slack workspaces are two servers: reading one with the other's tools returns the wrong workspace, or fails. Never carry an id, channel or permalink from one source into another.
 
 **Stay on topic.** Only what's about the owner's workstreams counts. Ignore unrelated chatter, even from the same people.
 
@@ -130,19 +137,21 @@ Each schedule's task only says "read AGENTS.md, then follow `procedures/<name>.m
 
 | Schedule | When | Precheck | Procedure |
 |---|---|---|---|
-| **Workstream Assistant: Slack sweep** | weekdays, hourly at :07, 08:07–18:07 | `app/sweep.py state slack` | [`procedures/slack-sweep.md`](procedures/slack-sweep.md) |
+| **Workstream Assistant: chat sweep** | weekdays, hourly at :07, 08:07–18:07 | `app/sweep.py state chat` | [`procedures/chat-sweep.md`](procedures/chat-sweep.md) |
 | **Workstream Assistant: meeting sweep** | weekdays, every 2 h at :37, 09:37–19:37 | `app/sweep.py state meetings` | [`procedures/meeting-sweep.md`](procedures/meeting-sweep.md) |
 | **Workstream Assistant: close finished items** | weekdays, every 20 min, 08:00–20:40 | `app/checks.py precheck`: only wakes me when a done check passes | [`procedures/close-finished.md`](procedures/close-finished.md) |
 
-A sweep's precheck skips the run when its source isn't configured in `config.json`. The meeting sweep also skips when transcripts come only as uploads, and, for a folder, when there are no new files.
+**One sweep covers every source of its type**, so a new source needs no new schedule. A sweep's precheck skips the run when no source of that type is configured, and when none of them has anything new: a meeting source that only takes uploads never has, and a folder with no new files doesn't either.
 
-Bookkeeping is in `app/sweep.py`: `state` prints the watermark, watched channels, open items with their done-check results and the rejected workstreams; `mark` moves the watermark (only after a successful update, so a crashed run leaves the gap for the next one); `seen <id>` records a processed meeting; `ensure-server` starts the API.
+An instance created before the input context became a list may still have a schedule called **Slack sweep**, whose precheck is `state slack` (still an alias for `state chat`) and whose task names `procedures/slack-sweep.md` (now a stub pointing here). Recreate it as the chat sweep above, keeping its rrule and timezone, then delete the old one.
+
+Bookkeeping is in `app/sweep.py`, all of it per source: `sources` lists every source with its watermark; `state <type|source-id>` prints what the next sweep needs, source by source; `mark <source-id>` moves one source's watermark (only after a successful update for that source, so a crashed or rate-limited source keeps its gap for the next run); `seen <id> --source <source-id>` records a processed meeting; `channel-add/remove --source <source-id>` sets the watched channels; `ensure-server` starts the API.
 
 ### Debrief
 
-A meeting doesn't change a workstream on its own: only the owner knows what it meant for their work. So the meeting sweep **proposes** a meeting for debrief and writes nothing else. It shows on the dashboard under **Debriefs**. When the owner clicks **Debrief**, a new session opens on that meeting and the **debrief** skill (`.claude/skills/debrief/SKILL.md`) talks it through: contradictions first, then what the owner now owes, what moved, what closed. I write only what they agree to. The owner can also start one in chat any time: "debrief the call with Cleo", an uploaded transcript, or a call nobody recorded.
+A meeting doesn't change a workstream on its own: only the owner knows what it meant for their work. So the meeting sweep **proposes** a meeting for debrief and writes nothing else. It shows on the dashboard under **Debriefs**, with the source it came from. When the owner clicks **Debrief**, a new session opens on that meeting and the **debrief** skill (`.claude/skills/debrief/SKILL.md`) talks it through: contradictions first, then what the owner now owes, what moved, what closed. I write only what they agree to. The owner can also start one in chat any time: "debrief the call with Cleo", an uploaded transcript, or a call nobody recorded.
 
-Bookkeeping: `app/sweep.py debrief-propose | debrief-show | debrief-start | debrief-done | debrief-dismiss`.
+Bookkeeping: `app/sweep.py debrief-propose --source <source-id> | debrief-show | debrief-start | debrief-done | debrief-dismiss`. A debrief remembers which source its meeting came from, so `debrief-show` can say where the transcript is.
 
 ### What I don't do without asking
 I don't post to Slack, create, comment on or close GitHub issues, or share artifacts. Everything outside the sandbox needs the owner's go-ahead.
