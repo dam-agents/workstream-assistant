@@ -32,6 +32,7 @@ The artifact is "Workstreams", interactive and private. Keep its id in memory.
 
 - **A data change needs no republish.** The page reads the API live.
 - **A template change needs a republish:** `python3 app/build.py`, then `create_artifact_upload_url`, PUT `app/app.html`, then `update_artifact` with the same id.
+- **A Kit Update can change the template too**, and nothing republishes the artifact on its own. So the page knows which template it was built from: `build.py` stamps the template's hash into it, the page sends that hash with every request (`?page=`), and the server records it. `/api/summary` returns the hash of the template on disk as `app_version`. When they differ, the page shows an "out of date" banner, and `sweep.py ensure-server` and every sweep's precheck print `App page: STALE`. Rebuild and republish when you see it.
 
 ## Running it
 

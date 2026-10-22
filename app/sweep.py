@@ -79,6 +79,7 @@ def print_header(type_, srcs):
     print(f"Sweep: {type_} ({len(srcs)} source{'s' if len(srcs) != 1 else ''})")
     print(f"Owner: {db.ME or '(not configured: finish ONBOARDING.md)'}")
     print(f"API server: {'up' if server_up() else 'DOWN (start it: python3 app/sweep.py ensure-server)'}")
+    print(db.page_status(db.connect())[1])
     print("Every source below is swept on its own watermark, and marked on its own: "
           "`python3 app/sweep.py mark <source-id>` per source, as each one is finished.")
 
@@ -271,6 +272,9 @@ def main():
                              stdout=open(LOG, "a"), stderr=subprocess.STDOUT, start_new_session=True)
             time.sleep(1.5)
         print("server up" if server_up() else f"server failed to start, see {LOG}")
+        ok, line = db.page_status(conn)
+        if not ok:
+            print(line)
     elif cmd in ("channels", "channel-add", "channel-remove"):
         a, rest = ap.parse_known_args(argv[1:])
         if cmd == "channels" and not a.source and not rest:

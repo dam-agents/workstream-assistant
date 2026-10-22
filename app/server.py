@@ -2,7 +2,7 @@
 import json
 import re
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 
 import db
 import launch
@@ -134,7 +134,9 @@ def dismiss_debrief(conn, body, debrief_id):
 
 class Handler(BaseHTTPRequestHandler):
     def _handle(self, method):
-        path = urlparse(self.path).path
+        url = urlparse(self.path)
+        path = url.path
+        page = parse_qs(url.query).get("page", [""])[0]
         length = int(self.headers.get("content-length") or 0)
         try:
             body = json.loads(self.rfile.read(length) or b"{}") if length else {}
@@ -144,6 +146,10 @@ class Handler(BaseHTTPRequestHandler):
             match = pattern.match(path)
             if m == method and match:
                 conn = db.connect()
+                if page and page != db.get_meta(conn, "page_version"):
+                    db.set_meta(conn, "page_version", page)  # which template the published page was built from
+                if page:
+                    db.set_meta(conn, "page_seen_at", db.now())
                 try:
                     status, payload = fn(conn, body, **match.groupdict())
                 except Exception as e:  # report inside the page, not only in the log
