@@ -319,7 +319,8 @@ function bindDebriefs() {
     try {
       const d = await api('POST', `/api/debriefs/${b.dataset.debrief}/start`);
       platform.sendPrompt(d.prompt);
-      await load();
+      b.disabled = false;
+      showBanner('warn', 'Debrief sent to the chat. If nothing arrives, open a chat first (send any message), then click Debrief again.');
     } catch (e) { showBanner('err', `Couldn't start the debrief: ${esc(e.message)}`); b.disabled = false; }
   });
   document.querySelectorAll('[data-dismiss-debrief]').forEach((b) => b.onclick = async () => {

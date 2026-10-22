@@ -15,7 +15,7 @@ The debrief is a short conversation where you and the owner agree how the workin
 
 ## How a debrief starts
 
-- **From the dashboard.** The meeting sweep does not touch the workstreams. It only *proposes* the meeting: a row under **Debriefs** with a **Debrief** button. The owner clicks it when they have time, and that sends a message into the chat naming the meeting and its debrief id. The row is already marked started.
+- **From the dashboard.** The meeting sweep does not touch the workstreams. It only *proposes* the meeting: a row under **Debriefs** with a **Debrief** button. The owner clicks it when they have time, and that sends a message into the chat naming the meeting and its debrief id. Mark it started first (`python3 app/sweep.py debrief-start <id>`): the button doesn't, because the platform drops the prompt when no chat is open yet.
 - **From the owner**, in any chat: "debrief the call with Cleo", a transcript they upload, or a few words about a call nobody recorded. Create the row yourself so the dashboard stays true:
   `python3 app/sweep.py debrief-propose <id> "<title>" --source <source-id> [--url …] [--why …]`, then `python3 app/sweep.py debrief-start <id>`. `--source` is the meeting source it came from (`python3 app/sweep.py sources` lists them); it can be left out only when the owner has exactly one.
 

@@ -8,6 +8,12 @@ New entries go under **Unreleased** in the pull request that makes the change (s
 
 ## Unreleased
 
+### Debrief isn't marked started when the prompt never arrives
+
+- On an empty "Start a new session" screen the platform drops the prompt ("Open a chat before using this artifact's buttons"), but the row still said **Started**. Now the agent marks the debrief started when the prompt reaches it, and the page reminds you to open a chat first if nothing arrives.
+
+**After updating:** republish the app (`app/README.md`, Publishing), and restart the API server.
+
 ### Debrief runs in the open chat ([#9](https://github.com/dam-agents/workstream-assistant/pull/9))
 
 - **Debrief** now sends the debrief prompt into the chat beside the dashboard, like **Ask agent to refresh**, instead of opening a new session. Opening a session relied on a platform tool (`schedule_once`) that isn't available, so the button failed with "Tool schedule_once not found".

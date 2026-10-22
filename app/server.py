@@ -115,19 +115,19 @@ def debrief_prompt(d):
     return (
         f"Debrief of the meeting “{d['title']}”{f" from {d['source_name']}" if d.get('source_name') else ''} (debrief #{d['id']}). "
         f"Follow the debrief skill, /home/agent/work/.claude/skills/debrief/SKILL.md, for this meeting. "
-        f"Start with `python3 /home/agent/work/app/sweep.py debrief-show {d['id']}`, which prints the meeting and where its transcript is. "
+        f"Start with `python3 /home/agent/work/app/sweep.py debrief-start {d['id']}`, then `python3 /home/agent/work/app/sweep.py debrief-show {d['id']}`, which prints the meeting and where its transcript is. "
         f"Talk it through with me before writing anything beyond what the skill allows.")
 
 
 @route("POST", r"/api/debriefs/(?P<debrief_id>\d+)/start")
 def start_debrief(conn, body, debrief_id):
-    """Mark the debrief started and return the prompt the page sends into the chat."""
+    """Return the prompt the page sends into the chat. It doesn't mark the debrief started:
+    the platform drops the prompt when no chat is open, so the agent marks it on arrival."""
     d = db.get_debrief(conn, debrief_id)
     if not d:
         return 404, {"error": "no such debrief"}
     if d["state"] in ("done", "dismissed"):
         return 409, {"error": f"this debrief is already {d['state']}"}
-    d = db.start_debrief(conn, debrief_id)
     return 200, {**d, "prompt": debrief_prompt(d)}
 
 
