@@ -43,7 +43,8 @@ If you are unsure which column a change belongs in, it belongs in the right one.
 
 ### 1. Prepare, silently
 
-- Run `python3 app/sweep.py debrief-show <id>`. It prints the meeting, which **source** it came from, why it was proposed, the workstreams it seems to touch (the sweep's guess, not a fact) and where the transcript is.
+- Run `python3 app/sweep.py debrief-show <id>`. It prints the meeting, which **source** it came from, why it was proposed, the workstreams it seems to touch (the sweep's guess, not a fact), where the transcript is, and the **prebrief** for it, if the owner prepared one (the **prebrief** skill).
+- Prebrief listed: read its markdown file. If `debrief-show` lists candidates rather than a linked one, pick the one that is plainly this call and link it (`python3 app/prebrief.py link <prebrief_id> <debrief_id>`); if it's not plain, ask the owner in your opening message.
 - Transcript available (any source kind: `mcp`, `folder`, `github`, or one the owner uploaded in chat): read it, in chunks if long. For an `mcp` source, use the tools of **that** source's server, named in its `tools`; another notetaker's tools don't know this recording id. Note `speakers unconfirmed` if the source says so.
 - No transcript (a call nobody recorded, a hallway chat): ask the owner to say in a few sentences what happened, who was there and when, then continue from step 2. Treat it as the owner's word; the progress entry says so, and its `source` names it as the owner's account.
 - Load the context the meeting touches: `python3 app/sweep.py state meetings`, the workstreams it names (`db.workstream`), their open asks and follow-ups (`python3 app/checks.py list`), and the rejected list (`db.rejected`). The owner's workstreams may also live in other sources: an ask from this meeting can close a follow-up first seen in any chat source.
@@ -54,6 +55,7 @@ If you are unsure which column a change belongs in, it belongs in the right one.
 
 One message. Lead with what you think changes, ordered by how much it matters to the owner:
 
+0. **Against the prebrief**, when there is one: one or two lines first. Was the goal of the call met? What from *Raise* and *Ask* got an answer, and what didn't come up? Anything from *Watch for* that happened. Items that didn't come up are candidates for follow-ups, not automatic ones.
 1. **Contradictions first.** "I had W2 as green, shipped Tuesday. In this call Cleo said it never reached prod."
 2. **What you owe now.** Things the owner took on or were asked to do, each as a proposed ask.
 3. **What moved.** Per workstream (use refs, W1, W2…): the proposed status change and the decision behind it.
@@ -100,11 +102,13 @@ A check that errors never closes.
 
 Finish with 2–4 lines: what you changed (by ref), what you left out on purpose, and anything still open that you will watch for.
 
+Archive the prebrief, if there was one: `python3 app/prebrief.py archive <prebrief_id> "<one line: how the call went against the plan>"`, then the `update_artifact` call it prints, which moves the artifact to the **Prebriefs · Archive** folder. Moving an artifact between the owner's own folders is bookkeeping, not sharing; it needs no extra go-ahead.
+
 Then close the debrief on the dashboard:
 
 - `python3 app/sweep.py debrief-done <id> "<one line: what changed>"` when you applied something, or nothing needed to change.
 - `python3 app/sweep.py debrief-dismiss <id> "<reason>"` when the owner says it isn't worth it.
-- If the owner leaves mid-way, change nothing interpretive and leave it **started**. It stays on the dashboard, so they can come back with **Debrief again**.
+- If the owner leaves mid-way, change nothing interpretive and leave it **started**, with its prebrief still open. It stays on the dashboard, so they can come back with **Debrief again**.
 
 ## Boundaries
 

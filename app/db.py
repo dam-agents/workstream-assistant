@@ -134,6 +134,22 @@ CREATE TABLE IF NOT EXISTS debriefs (
   outcome       TEXT NOT NULL DEFAULT '',      -- one line, written when the debrief is done
   UNIQUE (source, recording_id)
 );
+CREATE TABLE IF NOT EXISTS prebriefs (
+  id            INTEGER PRIMARY KEY,
+  workstream_id TEXT REFERENCES workstreams(id), -- the workstream whose folder it lives in; NULL = a call about none in particular
+  also          TEXT NOT NULL DEFAULT '',        -- other refs the call touches, e.g. "W1, W3"
+  title         TEXT NOT NULL,                   -- the call, e.g. "QA sync with Cleo"
+  meeting_ts    TEXT,                            -- when the call is planned
+  attendees     TEXT NOT NULL DEFAULT '',
+  artifact_id   TEXT NOT NULL DEFAULT '',        -- the published prebrief; empty while it's still being written
+  folder_id     TEXT NOT NULL DEFAULT '',        -- the artifact folder it is in now
+  debrief_id    INTEGER REFERENCES debriefs(id), -- the debrief that used it
+  state         TEXT NOT NULL DEFAULT 'open' CHECK (state IN ('open','archived')),
+  outcome       TEXT NOT NULL DEFAULT '',        -- one line, written when it's archived
+  created_at    TEXT NOT NULL,
+  updated_at    TEXT NOT NULL,
+  archived_at   TEXT
+);
 CREATE INDEX IF NOT EXISTS items_ws ON items(workstream_id);
 CREATE INDEX IF NOT EXISTS asks_ws ON asks(workstream_id);
 CREATE INDEX IF NOT EXISTS progress_ws_ts ON progress(workstream_id, ts);
@@ -309,6 +325,7 @@ def workstream(conn, ws_id):
     w["asks"] = rows(conn.execute("SELECT * FROM asks WHERE workstream_id = ? AND done_at IS NULL ORDER BY ts", (ws_id,)))
     w["followups"] = rows(conn.execute(
         "SELECT * FROM followups WHERE workstream_id = ? AND done_at IS NULL ORDER BY (waiting_on = ?) DESC, ts", (ws_id, ME)))
+    w["prebriefs"] = open_prebriefs(conn, ws_id)
     return w
 
 
@@ -585,3 +602,116 @@ def finish_debrief(conn, debrief_id, outcome=""):
 
 def dismiss_debrief(conn, debrief_id, outcome=""):
     return _set_debrief(conn, debrief_id, "dismissed", outcome)
+
+
+# ---- Prebriefs: the owner's preparation for a call, published as an artifact in the workstream's folder ----
+
+PREBRIEF_DIR = os.path.join(os.path.dirname(DB_PATH), "prebriefs")
+ARCHIVE = "archive"  # the folders key of the one archive folder
+
+
+def prebrief_path(prebrief_id):
+    """The working copy of a prebrief: the markdown that gets published. Instance data, never part of the kit."""
+    return os.path.join(PREBRIEF_DIR, f"{int(prebrief_id)}.md")
+
+
+def prebrief_folders(conn):
+    """Artifact folder ids: workstream id (or "" for calls about none) -> folder id, plus ARCHIVE."""
+    return json.loads(get_meta(conn, "prebrief_folders", "{}"))
+
+
+def set_prebrief_folder(conn, key, folder_id):
+    folders = prebrief_folders(conn)
+    folders[key] = folder_id
+    set_meta(conn, "prebrief_folders", json.dumps(folders))
+    return folders
+
+
+def prebrief_folder_name(conn, ws_id):
+    """The name the artifact folder for this workstream's prebriefs gets when it's created."""
+    if ws_id == ARCHIVE:
+        return "Prebriefs · Archive"
+    w = conn.execute("SELECT ref, name FROM workstreams WHERE id = ?", (ws_id,)).fetchone() if ws_id else None
+    return f"Prebriefs · W{w['ref']} {w['name']}" if w else "Prebriefs · Other calls"
+
+
+def add_prebrief(conn, ws_id, title, meeting_ts=None, attendees="", also=""):
+    """Start a prebrief for a planned call. Returns its id; the markdown goes to prebrief_path(id)."""
+    ws = resolve_workstream(conn, ws_id) if ws_id else None
+    if ws_id and not ws:
+        raise ValueError(f"no workstream {ws_id}")
+    ts = now()
+    cur = conn.execute(
+        "INSERT INTO prebriefs (workstream_id, also, title, meeting_ts, attendees, created_at, updated_at) VALUES (?,?,?,?,?,?,?)",
+        (ws, also, title, meeting_ts, attendees, ts, ts))
+    conn.commit()
+    os.makedirs(PREBRIEF_DIR, exist_ok=True)
+    return cur.lastrowid
+
+
+def _with_ref(conn, p):
+    w = conn.execute("SELECT ref, name FROM workstreams WHERE id = ?", (p["workstream_id"],)).fetchone() if p["workstream_id"] else None
+    p["ws_ref"] = f"W{w['ref']}" if w else ""
+    p["ws_name"] = w["name"] if w else ""
+    p["path"] = prebrief_path(p["id"])
+    return p
+
+
+def get_prebrief(conn, prebrief_id):
+    r = conn.execute("SELECT * FROM prebriefs WHERE id = ?", (int(prebrief_id),)).fetchone()
+    return _with_ref(conn, dict(r)) if r else None
+
+
+def open_prebriefs(conn, ws_id=None):
+    """Prebriefs not archived yet, soonest call first; those of one workstream when ws_id is given."""
+    q, args = "SELECT * FROM prebriefs WHERE state = 'open'", ()
+    if ws_id is not None:
+        q, args = q + " AND workstream_id = ?", (resolve_workstream(conn, ws_id) or ws_id,)
+    return [_with_ref(conn, p) for p in rows(conn.execute(q + " ORDER BY COALESCE(meeting_ts, created_at)", args))]
+
+
+def update_prebrief(conn, prebrief_id, **fields):
+    fields = {k: v for k, v in fields.items() if k in {"title", "meeting_ts", "attendees", "also", "artifact_id", "folder_id", "debrief_id"}}
+    if fields:
+        fields["updated_at"] = now()
+        conn.execute(f"UPDATE prebriefs SET {', '.join(f'{k} = ?' for k in fields)} WHERE id = ?", (*fields.values(), int(prebrief_id)))
+        conn.commit()
+    return get_prebrief(conn, prebrief_id)
+
+
+def archive_prebrief(conn, prebrief_id, outcome="", debrief_id=None):
+    """The call is over (debriefed, or it never happened). The artifact moves to the archive folder."""
+    ts = now()
+    conn.execute("UPDATE prebriefs SET state = 'archived', outcome = ?, debrief_id = COALESCE(?, debrief_id), "
+                 "folder_id = ?, archived_at = ?, updated_at = ? WHERE id = ?",
+                 (outcome, debrief_id, prebrief_folders(conn).get(ARCHIVE, ""), ts, ts, int(prebrief_id)))
+    conn.commit()
+    return get_prebrief(conn, prebrief_id)
+
+
+def prebriefs_for_debrief(conn, debrief):
+    """Open prebriefs that may be for this debrief's meeting: the one already linked, else those on a
+    workstream the meeting seems to touch or planned within a day of it. A guess for the agent to confirm."""
+    linked = [p for p in open_prebriefs(conn) if p["debrief_id"] == debrief["id"]]
+    if linked:
+        return linked
+    refs = {r.strip().upper() for r in (debrief.get("workstreams") or "").split(",") if r.strip()}
+    when = _parse(debrief.get("meeting_ts"))
+    out = []
+    for p in open_prebriefs(conn):
+        if p["debrief_id"]:
+            continue
+        touches = {p["ws_ref"]} | {r.strip().upper() for r in p["also"].split(",") if r.strip()}
+        pt = _parse(p["meeting_ts"])
+        near = bool(when and pt and abs((when - pt).total_seconds()) <= 86400)
+        if near or (refs & touches):
+            out.append(p)
+    return out
+
+
+def _parse(ts):
+    try:
+        d = datetime.fromisoformat(ts) if ts else None
+        return d if d is None or d.tzinfo else d.replace(tzinfo=TZ)
+    except ValueError:
+        return None
