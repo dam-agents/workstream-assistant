@@ -8,6 +8,12 @@ New entries go under **Unreleased** in the pull request that makes the change (s
 
 ## Unreleased
 
+### Prebrief Open no longer marks an ask done
+
+- On a workstream page, clicking **Open** on a prebrief also fired the **Done** handler meant for asks. Only real ask buttons get it now.
+
+**After updating:** republish the app (`app/README.md`, Publishing).
+
 ### README: the article
 
 - The README is now a short article on the problem the kit solves: work starts in conversations, only part of it reaches GitHub, and someone has to keep it all moving toward the goal. It has a new illustration, `assets/conversation-to-execution.svg`.
