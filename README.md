@@ -1,57 +1,31 @@
-# Workstream Assistant
+# From conversation to execution, with AI
 
-![Input context and execution context flow into the assistant, which joins them up into workstreams heading to their goals. You work with the assistant, and it acts in your execution context for you](assets/hero.svg)
+On Tuesday's call, the product team asks for one thing before their release on the 30th: your toolkit has to work with the Zurich team's new model. You open an issue and give it to Ben. Ben waits two days for access from Zurich, then gets the fix merged. On Friday the product team asks if it's ready. The issue is closed, but the fix was never released.
 
-Drive your workstreams to completion, or follow the ones you depend on, without forgetting what's on you or who you're waiting on.
+Every step left a trace, but only your memory connected them back to the product release. And you have a dozen chains like this running at once.
 
-## What a workstream is
+## How work actually moves
 
-As a knowledge worker you rarely work on one thing. You watch several streams of work at once, such as a product launch and a hiring round. Each of these is a **workstream**: one initiative with a goal, an owner, and often other people who own parts of it. It ends when the goal is reached, so "hire two designers by June" is a workstream, and "hiring" is too broad to be one.
+Supporting the new model wasn't a project of its own. It was one piece of something bigger: getting your toolkit into the product release on the 30th. That has a goal, an owner (you) and an end. Call it a **workstream**.
 
-Every workstream has two parts:
+If all of it lived in GitHub issues, you'd be fine: open the board and you know where you stand. But most of a workstream never becomes a ticket. It's in Slack threads, in calls, in emails and in the other teams' own tools. The issue tracker shows only part of the picture, so finding out where things really stand means piecing it together from all of them.
 
-- **Input context** is where the work is talked about: messaging apps such as Slack or Teams, and meetings. This is where people ask for things, decide and make promises.
-- **Execution context** is where the work gets done: the tool the team works in, such as a tracker, a shared document or a code repository. For software engineering that's usually GitHub.
+![Slack threads and meetings pour into one workstream, but only part of it reaches GitHub, which is all you see](assets/conversation-to-execution.svg)
 
-## How Workstream Assistant helps
+## Before and after every meeting
 
-To know where a workstream stands, you read both parts and join them up in your head, for every workstream, every day. That's how an ask from a meeting slips, or a piece of work you were waiting on gets finished and nobody tells you.
+Meetings are where workstreams turn. Deadlines slip, work changes hands, and decisions are made out loud. They're also where context gets lost.
 
-Workstream Assistant is a [DAM](https://github.com/dam-agents/dam) Starter Kit for an agent that reads both for you and joins them up. When a new workstream comes up in a conversation, the agent suggests it to you. Approve it and the agent keeps track of it from then on. When something is blocked on you, you can hand it to the agent, which already has the whole context. It reads your execution context from GitHub. And because so much of the work is decided in calls, it helps you prepare for each call and talk it through afterwards.
+A good meeting needs a prebrief. Before the call, you go through everything relevant: what's open, who's waiting on whom, what was left unresolved last time. Then you decide what you want from it. Between back-to-back calls nobody has time for that, so most meetings spend their first ten minutes catching up.
 
-**Your input context is a list, not one of each.** Work rarely happens in one place: your own company's Slack and a partner's, a Teams server, a notetaker for calls, a folder of exported transcripts. Connect as many as you have and the agent sweeps each on its own, remembering separately how far it has read in each, so nothing is missed because something else was read. Every item then says which source it came from, so "who asked me this, and where" has an answer.
+It also needs a debrief. What does everything that was just said mean for the work? Someone has to open the issue, message the product team, email the partner. By then the next call has already started. The notetaker writes everything down, and nobody reads it.
 
-The agent keeps track of:
+## AI-native execution
 
-- **Workstreams**: a high-level view of where each one stands toward its goal, with the details behind it one click away.
-- **Asks**, shown as **Needs you**: what someone asked you to do, what you promised, and decisions or reviews waiting on you.
-- **Follow-ups**: the quick loops you opened ("can you rebase it?", "let me know when it's done"), each with who has the next move.
-- **Progress**: the evidence timeline of PRs, tickets, messages, meetings and releases.
+Look at what all of this asks of you. Hold the whole context of every workstream in your head, and keep checking that every part of it still moves in the right direction. It's heavy, repetitive work, and it takes real judgment: you have to understand what a message means for a goal, not just that it was sent. Too mechanical for a person to do well every day, and too nuanced for a script. That's exactly the kind of work AI is good at.
 
-It also gives you an app, a control centre for all of this. The app opens with "N things need you", then one row per workstream with its status, a one-line note and its last activity. Workstreams that need you come first. Open a workstream to see its asks, TL;DR, key points, follow-ups and timeline. You act from there too: mark asks and follow-ups done, and approve or reject the workstreams the agent suggests. The dashboard also lists the meetings waiting for a debrief.
+Picture an agent that reads every message you're part of and has access to every meeting. It does the due diligence you'd otherwise do by hand: opens the issue, checks the commits, nudges Ben about the release. Then it does the part no tool does. It takes everything you'd have gathered across Slack, calls and GitHub and turns it into one coherent story per workstream.
 
-## Before and after every call
+That story answers the only question that matters on a busy Tuesday: is the next move on you, or on someone else? And when something stalls, it tells you before anyone has to ask.
 
-A lot of what moves a workstream is said in a call: a deadline slides, someone takes on a piece, a decision is made out loud. A call is also where things get lost, because nobody writes them down, or a notetaker writes down everything and nobody reads it.
-
-The agent works with you on both sides of the call.
-
-**Prebrief: walk in knowing what you want from it.** Say "prebrief the call with Cleo", or click **Prebrief a call** on a workstream page. The agent already has the context: your open asks, what's waiting on Cleo, what Cleo asked you for, what was left open the last time you met. It drafts one short page with the goal of the call, what to raise, what to ask, what you may be asked, and what to watch for, each point linked to its evidence. You cut and reorder it until it's right, and the agent saves it as a private document in that workstream's folder.
-
-**Debrief: agree what the call changed.** After the call, if you've connected a notetaker or a transcript folder, the meeting sweep finds the transcript and lists the meeting on your dashboard under **Debriefs**. Click **Debrief** when you have a moment. You were there, so the agent skips the recap and opens with what it thinks changed, most important first:
-
-- what contradicts the record ("I had W2 as shipped on Tuesday. In this call Cleo said it never reached prod."),
-- what you now owe,
-- which workstreams moved, and which loops closed.
-
-Each point links to the moment in the transcript it comes from, and you can accept it with one word. Correct what it got wrong ("that wasn't a decision, Cleo was thinking aloud") and it writes only what you agreed to. If you prebriefed the call, the debrief starts with how the call went against your plan, then moves the prebrief to the archive.
-
-A call nobody recorded can be debriefed too: tell the agent in a few sentences what happened, or upload the transcript in chat.
-
-## What it does, and what it leaves to you
-
-- **You decide what it tracks.** Every chat and meeting sweep looks for new workstreams that have a clear goal and an owner, and that you're involved in. They show up in the app as suggestions, and you approve or reject each one. Give a reason when you reject one ("not my area", "we already have an issue for that") and it won't suggest that workstream, or anything close to it, again.
-- **Meetings change nothing until you debrief them.** The meeting sweep only proposes a meeting for debrief. Status, asks and decisions from a call are written after you've agreed to them, and a prebrief is a plan, so it writes nothing at all.
-- **It closes finished items itself.** Each ask and follow-up carries a done check: an issue closed, a PR merged, a tag that contains a fix, a release with notes. A script runs the checks every 20 minutes on weekdays and wakes the agent only when one passes, so idle runs cost no model calls. The agent confirms each item is really done before closing it.
-- **Every entry links to its source.** Progress, asks and follow-ups link to the exact message, GitHub issue or PR, or meeting behind them, and name the workspace or tool it came from. When sources disagree, such as a release that "shipped" in chat but was never deployed, the agent corrects the record and tells you.
-- **It can act for you.** When something is blocked on you, ask the agent to do it. It already knows the workstream, so it can draft what's needed, such as a reply on an issue or the release notes, and do the work in GitHub once you say so. Until you do, it only reads the sources you connect and writes to its own database.
+It covers both sides of every meeting, too. Before the call, it writes your prebrief: one short page with what you want from the call, what to raise and what you might be asked. After it, it debriefs with you: what changed, what you now owe, and the issues, messages and emails that should follow. You say yes, and it does the work.
