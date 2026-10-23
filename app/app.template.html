@@ -373,6 +373,28 @@ function followupRow(sm) {
     ${live ? `<button class="ask-done sm-done" data-followup="${sm.id}">Done</button>` : ''}</div>`;
 }
 
+function prebriefRow(p) {
+  return `<div class="sm"><div class="sm-main"><div>${esc(p.title)}</div>
+    <div class="ask-src">${p.meeting_ts ? esc(fmtDay(p.meeting_ts)) + ' ' + esc(fmtTime(p.meeting_ts)) + ' · ' : ''}${p.attendees ? 'with ' + esc(p.attendees) + ' · ' : ''}${p.artifact_id ? 'ready' : '<span class="pill p-grey">Draft</span>'}</div></div>
+    ${live ? `<button class="ask-done" data-prebrief="${p.id}">Open</button>` : ''}</div>`;
+}
+
+function bindPrebriefs(a) {
+  const send = (text) => {
+    if (typeof platform === 'undefined' || !platform.sendPrompt) {
+      showBanner('warn', 'Prompt buttons work only in the docked preview beside the chat.');
+      return;
+    }
+    platform.sendPrompt(text);
+    showBanner('warn', 'Sent to the chat. If nothing arrives, open a chat first (send any message), then click again.');
+  };
+  const ref = a.ref ? `W${a.ref}` : a.id;
+  const nb = $('prebrief');
+  if (nb) nb.onclick = () => send(`Prebrief a call for ${ref} (${a.name}). Follow the prebrief skill, /home/agent/work/.claude/skills/prebrief/SKILL.md: ask me which call if you can't tell, then draft it with me.`);
+  document.querySelectorAll('[data-prebrief]').forEach((b) => b.onclick = () =>
+    send(`Continue prebrief #${b.dataset.prebrief} for ${ref}. Follow the prebrief skill, /home/agent/work/.claude/skills/prebrief/SKILL.md: \`python3 /home/agent/work/app/prebrief.py show ${b.dataset.prebrief}\`, then link me the artifact and show me where it stands.`));
+}
+
 function bindFollowups() {
   document.querySelectorAll('.sm-done').forEach((b) => b.onclick = async () => {
     b.disabled = true;
@@ -410,6 +432,9 @@ function renderWorkstream(a) {
     <div class="tldr"><div class="lbl">TL;DR</div>${esc(a.tldr || a.status_note)}</div>
     ${points ? `<h2>Key points</h2><ul class="points">${points}</ul>` : ''}
     ${(a.followups || []).length ? `<h2>Follow-ups <span class="c">${a.followups.length}</span></h2><div class="sm-list">${a.followups.map(followupRow).join('')}</div>` : ''}
+    <h2>Prebriefs <span class="c">${(a.prebriefs || []).length ? a.prebriefs.length + ' upcoming call' + (a.prebriefs.length > 1 ? 's' : '') : 'none open'}</span>
+      <button id="prebrief" style="margin-left:auto" ${live ? '' : 'disabled'}>Prebrief a call</button></h2>
+    ${(a.prebriefs || []).length ? `<div class="sm-list">${a.prebriefs.map(prebriefRow).join('')}</div>` : ''}
     <h2>Progress <span class="c">${a.progress.length}</span></h2>
     <div class="tl">${days || '<div class="empty">No progress recorded yet.</div>'}</div>
     <details class="more"><summary>Goal and decisions</summary>
@@ -417,6 +442,7 @@ function renderWorkstream(a) {
       ${decisions ? `<ul>${decisions}</ul>` : ''}
     </details>`;
   bindFollowups();
+  bindPrebriefs(a);
   document.querySelectorAll('.ask-done:not(.sm-done)').forEach((b) => b.onclick = async () => {
     b.disabled = true;
     try { await api('POST', `/api/asks/${b.dataset.ask}/done`); await load(); }

@@ -100,6 +100,7 @@ The `db.py` helpers print a warning when an item has no link. Fix it before fini
   - **TL;DR**: 2–3 sentences on where it stands toward the goal.
   - **Key points**: at most ~5 bullets, `Label: text` (Blocker, On you, Next, Done when…). `#123` becomes a link to `github_repo`.
   - **Follow-ups** tied to it (only when there are any).
+  - **Prebriefs**: open prebriefs for upcoming calls, and a **Prebrief a call** button.
   - **Progress**: the timeline, newest first.
   - Goal and decisions, collapsed at the bottom.
 - TL;DR, key points and status note are **text I write**. Rewrite them on every refresh; they don't update themselves.
@@ -150,6 +151,10 @@ Bookkeeping is in `app/sweep.py`, all of it per source: `sources` lists every so
 ### Debrief
 
 A meeting doesn't change a workstream on its own: only the owner knows what it meant for their work. So the meeting sweep **proposes** a meeting for debrief and writes nothing else. It shows on the dashboard under **Debriefs**, with the source it came from. When the owner clicks **Debrief**, the app sends a debrief prompt for that meeting into the open chat and the **debrief** skill (`.claude/skills/debrief/SKILL.md`) talks it through: contradictions first, then what the owner now owes, what moved, what closed. I write only what they agree to. The owner can also start one in chat any time: "debrief the call with Cleo", an uploaded transcript, or a call nobody recorded.
+
+### Prebrief
+
+Before a call, the owner can prepare it with me: the **prebrief** skill (`.claude/skills/prebrief/SKILL.md`), started with "prebrief the call with Cleo" or **Prebrief a call** on a workstream page. We iterate on one short document (goal of the call, what to raise, what to ask, what to watch for), and when it's ready I publish it as a private markdown artifact in that workstream's artifact folder, **Prebriefs · W3 …**. It writes nothing else. The debrief of that call reads the prebrief next to the transcript, opens with how the call went against it, and then moves the artifact to **Prebriefs · Archive**. Bookkeeping: `app/prebrief.py` (`new | list | show | folder | folder-set | published | link | archive`); the working copies are in `data/prebriefs/`.
 
 Bookkeeping: `app/sweep.py debrief-propose --source <source-id> | debrief-show | debrief-start | debrief-done | debrief-dismiss`. A debrief remembers which source its meeting came from, so `debrief-show` can say where the transcript is.
 
