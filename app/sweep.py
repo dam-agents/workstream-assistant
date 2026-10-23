@@ -262,6 +262,15 @@ def main():
         print(f"Transcript: {where}")
         if src and src["note"]:
             print(f"Note on this source: {src['note']}")
+        pbs = db.prebriefs_for_debrief(conn, d)
+        if pbs:
+            linked = any(p["debrief_id"] == d["id"] for p in pbs)
+            print("Prebrief for this meeting:" if linked else
+                  "Prebriefs that may be for this meeting (confirm with the owner, then `prebrief.py link <id> " + str(d["id"]) + "`):")
+            for p in pbs:
+                print(f"  - #{p['id']} {p['ws_ref'] or '-'} {p['title']} ({p['meeting_ts'] or 'no time'}): read {p['path']}")
+        else:
+            print("Prebrief: none open for this meeting")
     elif cmd in ("debrief-start", "debrief-done", "debrief-dismiss"):
         fn = {"debrief-start": db.start_debrief, "debrief-done": db.finish_debrief, "debrief-dismiss": db.dismiss_debrief}[cmd]
         d = fn(conn, argv[1]) if cmd == "debrief-start" else fn(conn, argv[1], " ".join(argv[2:]))

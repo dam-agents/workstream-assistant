@@ -8,6 +8,19 @@ New entries go under **Unreleased** in the pull request that makes the change (s
 
 ## Unreleased
 
+### README: before and after every call
+
+- The README has a new section on prebriefs and debriefs: how the agent helps you prepare a call and agree afterwards what it changed.
+
+### Prebrief: prepare a call, then debrief against it
+
+- New **prebrief** skill: say "prebrief the call with Cleo", or click **Prebrief a call** on a workstream page. We iterate on a short document (goal, what to raise, what to ask, what to watch for), and the agent publishes it as a private markdown artifact in that workstream's folder, **Prebriefs · W3 …**.
+- The workstream page lists its open prebriefs. **Open** asks the agent for the link and to carry on.
+- The debrief finds the prebrief for its meeting (`debrief-show` lists it), opens with how the call went against the plan, and moves the artifact to **Prebriefs · Archive** when it's done.
+- New `prebriefs` table (created on the next `db.connect()`), `app/prebrief.py`, and `data/prebriefs/` for the working copies.
+
+**After updating:** republish the app (`app/README.md`, Publishing), and restart the API server.
+
 ### Debrief isn't marked started when the prompt never arrives
 
 - On an empty "Start a new session" screen the platform drops the prompt ("Open a chat before using this artifact's buttons"), but the row still said **Started**. Now the agent marks the debrief started when the prompt reaches it, and the page reminds you to open a chat first if nothing arrives.
