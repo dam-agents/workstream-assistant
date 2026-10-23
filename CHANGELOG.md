@@ -8,6 +8,10 @@ New entries go under **Unreleased** in the pull request that makes the change (s
 
 ## Unreleased
 
+### README: before and after every call
+
+- The README has a new section on prebriefs and debriefs: how the agent helps you prepare a call and agree afterwards what it changed.
+
 ### Prebrief: prepare a call, then debrief against it
 
 - New **prebrief** skill: say "prebrief the call with Cleo", or click **Prebrief a call** on a workstream page. We iterate on a short document (goal, what to raise, what to ask, what to watch for), and the agent publishes it as a private markdown artifact in that workstream's folder, **Prebriefs · W3 …**.
