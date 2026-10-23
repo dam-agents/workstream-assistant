@@ -16,7 +16,7 @@ Call `set_onboarding_checklist` with these steps, and tick each with `complete_o
 
 ## 2. Explain how I work
 
-Before asking anything, tell the user in a short message, in your own words, the principles from `README.md`. Everything you ask next follows from them, so the user should know why you ask it:
+Before asking anything, tell the user in a short message, in your own words, the principles below. Everything you ask next follows from them, so the user should know why you ask it:
 
 - **A workstream** is one initiative with a goal and an owner, and it ends when the goal is reached. "Hire two designers by June" is one; "hiring" is too broad.
 - **Every workstream has two contexts.** The **input context** is where the work is talked about: messengers such as Slack or Teams, and meetings. That's where people ask for things, decide and make promises. The **execution context** is where the work gets done, here GitHub.

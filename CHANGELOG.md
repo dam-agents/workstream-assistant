@@ -8,6 +8,11 @@ New entries go under **Unreleased** in the pull request that makes the change (s
 
 ## Unreleased
 
+### README: the article
+
+- The README is now a short article on the problem the kit solves: work starts in conversations, only part of it reaches GitHub, and someone has to keep it all moving toward the goal. It has a new illustration, `assets/conversation-to-execution.svg`.
+- Onboarding no longer points at the README for the principles it explains; they're listed in `ONBOARDING.md` itself.
+
 ### README: before and after every call
 
 - The README has a new section on prebriefs and debriefs: how the agent helps you prepare a call and agree afterwards what it changed.

@@ -1,0 +1,118 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 560" width="1200" height="560" role="img" aria-labelledby="t d">
+  <title id="t">From conversations to the goal</title>
+  <desc id="d">Slack threads and meetings on the left pour into a funnel: one workstream with one goal. The funnel feeds the execution context on the right, GitHub, where an issue is closed and a PR merged but the release is still missing. You watch GitHub, and only see what reached it.</desc>
+  <style>
+    :root {
+      --surface:#f6f7f9; --raise:#ffffff; --border:#e3e6ea; --text:#1b1f24; --muted:#5b6470;
+      --blue:#2457c5; --blue-bg:#e9effc; --green:#1f7a3d; --amber:#a86500; --amber-bg:#fdf3e3;
+      --you:#7c3aed; --you-bg:#f1eafe; --line:#c9ced5;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --surface:#1c2026; --raise:#20252c; --border:#2c323a; --text:#e6e9ed; --muted:#9aa3ae;
+        --blue:#8fb1ff; --blue-bg:#1b2640; --green:#6fd08f; --amber:#f2b45a; --amber-bg:#2e2416;
+        --you:#a78bfa; --you-bg:#2a2140; --line:#3a414b;
+      }
+    }
+    text { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; }
+    .label { font-size:13px; font-weight:700; letter-spacing:.08em; fill:var(--muted); }
+    .title { font-size:16px; font-weight:700; fill:var(--text); }
+    .body { font-size:13px; fill:var(--text); }
+    .meta { font-size:12px; fill:var(--muted); }
+    .card { fill:var(--surface); stroke:var(--border); stroke-width:2; }
+    .tile { fill:var(--raise); stroke:var(--border); stroke-width:1.5; }
+    .avatar { fill:var(--blue-bg); stroke:var(--blue); stroke-width:1.5; }
+    .ini { font-size:11px; font-weight:700; fill:var(--blue); }
+    .feed { fill:none; stroke:var(--blue); stroke-width:3; stroke-linecap:round; opacity:.5; }
+    .flow { fill:none; stroke:var(--blue); stroke-width:3; stroke-linecap:round; stroke-dasharray:1 22; animation:flow 2.4s linear infinite; }
+    .funnel { fill:var(--blue-bg); stroke:var(--blue); stroke-width:2.5; stroke-linejoin:round; }
+    .out { fill:none; stroke:var(--blue); stroke-width:4; stroke-linecap:round; }
+    .ok { fill:var(--green); }
+    .warn { fill:var(--amber); }
+    .mark { fill:none; stroke:var(--raise); stroke-width:2.5; stroke-linecap:round; stroke-linejoin:round; }
+    .miss { fill:var(--amber-bg); stroke:var(--amber); stroke-width:1.5; stroke-dasharray:5 4; }
+    .you { fill:var(--you); }
+    .gaze { fill:none; stroke:var(--you); stroke-width:2; stroke-dasharray:3 6; opacity:.8; }
+    @keyframes flow { to { stroke-dashoffset:-23; } }
+    @media (prefers-reduced-motion: reduce) { .flow { animation:none; } }
+  </style>
+
+  <!-- Input context -->
+  <text class="label" x="40" y="44">INPUT CONTEXT</text>
+
+  <rect class="card" x="40" y="60" width="340" height="210" rx="8"/>
+  <text class="title" x="60" y="90">Slack</text>
+  <text class="meta" x="112" y="90">#toolkit-release</text>
+  <rect class="tile" x="60" y="106" width="300" height="44" rx="6"/>
+  <circle class="avatar" cx="80" cy="128" r="11"/><text class="ini" x="80" y="132" text-anchor="middle">P</text>
+  <text class="body" x="100" y="133">Can we get the open-source review?</text>
+  <rect class="tile" x="60" y="158" width="300" height="44" rx="6"/>
+  <circle class="avatar" cx="80" cy="180" r="11"/><text class="ini" x="80" y="184" text-anchor="middle">B</text>
+  <text class="body" x="100" y="185">Still waiting on access from Zurich</text>
+  <rect class="tile" x="60" y="210" width="300" height="44" rx="6"/>
+  <circle class="avatar" cx="80" cy="232" r="11"/><text class="ini" x="80" y="236" text-anchor="middle">C</text>
+  <text class="body" x="100" y="237">Access granted, try again</text>
+
+  <rect class="card" x="40" y="290" width="340" height="210" rx="8"/>
+  <text class="title" x="60" y="320">Meetings</text>
+  <text class="meta" x="138" y="320">Tuesday sync, transcript</text>
+  <rect class="tile" x="60" y="336" width="300" height="148" rx="6"/>
+  <text class="meta" x="76" y="362">10:04  Product team</text>
+  <text class="body" x="76" y="380">"It has to work with the new model."</text>
+  <text class="meta" x="76" y="408">10:06  You</text>
+  <text class="body" x="76" y="426">"Ben can take it."</text>
+  <text class="meta" x="76" y="454">10:11  Product team</text>
+  <text class="body" x="76" y="472">"We need docs by the 30th too."</text>
+
+  <!-- Feeds into the funnel -->
+  <path class="feed" d="M380 165 C 450 165, 460 230, 520 240"/>
+  <path class="feed" d="M380 395 C 450 395, 460 330, 520 320"/>
+  <path class="flow" d="M380 165 C 450 165, 460 230, 520 240"/>
+  <path class="flow" d="M380 395 C 450 395, 460 330, 520 320"/>
+
+  <!-- Funnel: one workstream, one goal -->
+  <text class="label" x="600" y="120" text-anchor="middle">ONE WORKSTREAM</text>
+  <path class="funnel" d="M500 140 L700 140 L630 300 L630 380 L570 380 L570 300 Z"/>
+  <text class="title" x="600" y="186" text-anchor="middle">Toolkit in the</text>
+  <text class="title" x="600" y="206" text-anchor="middle">product release</text>
+  <text class="meta" x="600" y="232" text-anchor="middle">Goal: the 30th</text>
+  <circle cx="600" cy="268" r="5" fill="var(--blue)"/>
+  <circle cx="600" cy="294" r="4" fill="var(--blue)" opacity=".7"/>
+  <circle cx="600" cy="318" r="3" fill="var(--blue)" opacity=".5"/>
+
+  <!-- Into execution -->
+  <path class="out" d="M600 380 C 600 440, 700 440, 800 440"/>
+  <path class="flow" d="M600 380 C 600 440, 700 440, 800 440"/>
+
+  <!-- Execution context -->
+  <text class="label" x="820" y="44">EXECUTION CONTEXT</text>
+  <rect class="card" x="820" y="200" width="340" height="300" rx="8"/>
+  <text class="title" x="840" y="230">GitHub</text>
+  <text class="meta" x="900" y="230">research/toolkit</text>
+
+  <rect class="tile" x="840" y="246" width="300" height="52" rx="6"/>
+  <circle class="ok" cx="862" cy="272" r="10"/><path class="mark" d="M857 272 l4 4 l7 -8"/>
+  <text class="body" x="882" y="268">Issue: support the new model</text>
+  <text class="meta" x="882" y="286">Closed</text>
+
+  <rect class="tile" x="840" y="306" width="300" height="52" rx="6"/>
+  <circle class="ok" cx="862" cy="332" r="10"/><path class="mark" d="M857 332 l4 4 l7 -8"/>
+  <text class="body" x="882" y="328">PR: model adapter</text>
+  <text class="meta" x="882" y="346">Merged</text>
+
+  <rect class="miss" x="840" y="366" width="300" height="52" rx="6"/>
+  <circle class="warn" cx="862" cy="392" r="10"/><path class="mark" d="M862 386 v7 M862 397 v0.5"/>
+  <text class="body" x="882" y="388">Release with the fix</text>
+  <text class="meta" x="882" y="406">Not cut yet</text>
+
+  <rect class="tile" x="840" y="426" width="300" height="52" rx="6" opacity=".55"/>
+  <text class="meta" x="862" y="456">Docs, open-source review: no issue</text>
+
+  <!-- You, watching GitHub -->
+  <circle class="you" cx="990" cy="92" r="18"/>
+  <path class="you" d="M958 160 C 958 128, 1022 128, 1022 160 Z"/>
+  <text class="label" x="1040" y="100" style="fill:var(--you)">YOU</text>
+  <text class="meta" x="1040" y="120">see only what</text>
+  <text class="meta" x="1040" y="136">reached GitHub</text>
+  <path class="gaze" d="M990 166 L990 196"/>
+</svg>
