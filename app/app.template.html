@@ -443,7 +443,7 @@ function renderWorkstream(a) {
     </details>`;
   bindFollowups();
   bindPrebriefs(a);
-  document.querySelectorAll('.ask-done:not(.sm-done)').forEach((b) => b.onclick = async () => {
+  document.querySelectorAll('.ask-done[data-ask]').forEach((b) => b.onclick = async () => {
     b.disabled = true;
     try { await api('POST', `/api/asks/${b.dataset.ask}/done`); await load(); }
     catch (e) { showBanner('err', `Couldn't save: ${esc(e.message)}`); b.disabled = false; }
