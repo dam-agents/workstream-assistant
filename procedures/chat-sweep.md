@@ -19,6 +19,7 @@ Run by the schedule **Workstream Assistant: chat sweep**. It reads **every chat 
    - close loops: resolve items whose check shows DONE in the precheck, and items marked "judge" whose `done_when` you can now see happened (`resolve_ask` / `resolve_followup`)
    - **re-read the source thread of every open "judge" item** whose URL belongs to a source you're sweeping (its read-thread tool, on the item's channel + ts). A reply inside an older thread never appears as a new channel message, so the channel read alone misses it. If the reply or filed issue meets `done_when`, resolve the item. Don't make the bar stricter than `done_when` (e.g. "issue filed" counts; don't wait for the PR to merge).
    - check GitHub (`gh`, repo `github_repo`) when a ticket or PR state matters
+   - **who is away**, when the precheck lists availability sources: use the **who-is-away** skill for the people the open work waits on, and record what it finds as step 5 of "Refreshing workstreams" in AGENTS.md says.
    - for any workstream that changed: rewrite tldr, key_points, status and status_note (`update_workstream`)
 5. New candidate workstreams: only if it's clearly a goal with an owner and the owner of this agent is involved. Never anything rejected or close to it. Add as `suggested` (`app/suggest.py`).
 6. Stay read-only outside the database: no messages posted in any source, no GitHub changes, no sharing.

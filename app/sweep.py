@@ -179,6 +179,10 @@ def state(conn, which):
     if rej:
         print("\nRejected workstreams (never re-suggest): " + "; ".join(
             f"W{r['ref']} {r['name']} ({r['reject_reason'] or 'no reason'})" for r in rej))
+    avail = config.sources("availability")
+    if avail:
+        print("\nAvailability sources (read them with the who-is-away skill): "
+              + "; ".join(f"[{a['id']}] {a['name']} — {a['kind']}" + (f" ({a['note']})" if a["note"] else "") for a in avail))
     if type_ == "chat":
         import checks
         print("\nOpen asks and follow-ups with their done check (DONE = the service shows it's finished):")
@@ -201,17 +205,18 @@ def main():
 
     if cmd == "sources":
         print(f"Owner: {db.ME or '(not configured)'} · timezone {CFG['timezone']} · default repo {CFG['github_repo'] or '(none)'}")
-        for type_ in ("chat", "meetings"):
+        for type_ in config.TYPES:
             srcs = config.sources(type_)
             print(f"\n{type_} sources ({len(srcs)}):" if srcs else f"\n{type_} sources: none configured")
             for s in srcs:
                 last = db.last_sweep(conn, s["id"])
                 extra = f", {len(db.channels(conn, s['id']))} channels" if type_ == "chat" else \
-                        f", {len(db.seen_meeting_ids(conn, s['id']))} meetings processed"
+                        f", {len(db.seen_meeting_ids(conn, s['id']))} meetings processed" if type_ == "meetings" else ""
                 print(f"  [{s['id']}] {s['name']} — {s['kind']}"
                       + (f", tools “{s['tools']}”" if s["tools"] else "")
-                      + (f", at {s['location']}" if s["location"] else "")
-                      + f"\n      last sweep: {last or 'never'}{extra}")
+                      + (f", at {config.masked(s)}" if s["location"] else "")
+                      + (f"\n      last sweep: {last or 'never'}{extra}" if type_ != "availability"
+                         else "\n      read when needed: the who-is-away skill"))
         probs = config.problems()
         if probs:
             print("\nProblems:")
