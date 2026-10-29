@@ -25,18 +25,22 @@ DEFAULTS = {
 # One entry of "sources". Every field is optional except type and kind.
 SOURCE = {
     "id": "",            # stable short handle, e.g. "slack-acme". Keys this source's sweep watermark, channels and seen meetings: renaming it starts its history over
-    "type": "",          # "chat" (a messenger, swept by the chat sweep) or "meetings" (transcripts, swept by the meeting sweep)
-    "kind": "",          # chat: slack, mcp, other · meetings: mcp, folder, github, upload
+    "type": "",          # "chat" (a messenger, swept by the chat sweep), "meetings" (transcripts, swept by the meeting sweep) or "availability" (who is away: a vacation or leave calendar the agent reads itself)
+    "kind": "",          # chat: slack, mcp, other · meetings: mcp, folder, github, upload · availability: ical, mcp, other
     "name": "",          # what the owner calls it, e.g. "Acme Slack". Used in the app and in every `source` field
     "tools": "",         # the MCP server this source is reached through, as named in the connection: every tool it carries is prefixed with it. Empty when it needs no MCP server (folder, github)
     "account": "",       # who the owner is in it, e.g. a Slack user id U0123456789
-    "location": "",      # workspace URL, folder path, owner/repo/path, or the MCP server's own name for its content
+    "location": "",      # workspace URL, folder path, owner/repo/path, the MCP server's own name for its content, or an iCal feed URL (a private token: never shown in full)
     "url_template": "",  # link to one item, with {id} for the recording / message id. Empty = use the item's own link
-    "note": "",          # anything the sweeps must know about this source, e.g. "partner workspace, ask before searching private channels"
+    "note": "",          # anything the sweeps must know about this source, e.g. "partner workspace, ask before searching private channels",
+                         # or for a calendar how its entries read, e.g. "SUMMARY is '<Name> - <Vacation|Sick day|…>'; holidays have no name"
 }
 
 CHAT_KINDS = ("slack", "mcp", "other")
 MEETING_KINDS = ("mcp", "folder", "github", "upload")
+AVAILABILITY_KINDS = ("ical", "mcp", "other")
+TYPES = ("chat", "meetings", "availability")
+KINDS = {"chat": CHAT_KINDS, "meetings": MEETING_KINDS, "availability": AVAILABILITY_KINDS}
 LEGACY_SWEEP_KEY = {"chat": "last_sweep_slack", "meetings": "last_sweep_meetings"}
 
 
@@ -69,7 +73,8 @@ def _normalize(raw):
         s["kind"] = (s["kind"] or "").strip().lower()
         s["type"] = (s["type"] or "").strip().lower()
         if not s["type"]:  # a kind that belongs to only one type says the type by itself
-            s["type"] = "chat" if s["kind"] == "slack" else ("meetings" if s["kind"] in ("folder", "github", "upload") else "")
+            s["type"] = "chat" if s["kind"] == "slack" else ("meetings" if s["kind"] in ("folder", "github", "upload")
+                                                              else "availability" if s["kind"] == "ical" else "")
         s["name"] = s["name"] or s["id"] or (s["kind"] or "source").title()
         s["id"] = _slug(s["id"] or s["name"], f"source-{i + 1}")
         while s["id"] in seen:  # two sources may not share a watermark
@@ -120,6 +125,13 @@ def label(src):
     return f"{src['name']} ({src['kind'] or 'unknown kind'})"
 
 
+def masked(src):
+    """A source's location as it may be shown: an iCal feed URL is a private token, so its secret part is hidden."""
+    if src["kind"] != "ical":
+        return src["location"]
+    return re.sub(r"([^/?=&]{6})[^/?=&]{6,}", r"\1…", src["location"])
+
+
 def ids(type_=None):
     return [s["id"] for s in sources(type_)]
 
@@ -133,12 +145,12 @@ def problems():
         out.append("github_repo is not set: the done checks have no default repository")
     for s in CFG["sources"]:
         who = f"source “{s['id']}”"
-        if s["type"] not in ("chat", "meetings"):
-            hint = (f" — “{s['type']}” is a kind, not a type: set kind to it and type to chat or meetings"
-                    if s["type"] in set(CHAT_KINDS + MEETING_KINDS) else "")
-            out.append(f"{who}: type must be chat or meetings (it is {s['type'] or 'empty'}){hint}")
+        if s["type"] not in TYPES:
+            hint = (f" — “{s['type']}” is a kind, not a type: set kind to it and type to chat, meetings or availability"
+                    if s["type"] in set(CHAT_KINDS + MEETING_KINDS + AVAILABILITY_KINDS) else "")
+            out.append(f"{who}: type must be chat, meetings or availability (it is {s['type'] or 'empty'}){hint}")
             continue
-        kinds = CHAT_KINDS if s["type"] == "chat" else MEETING_KINDS
+        kinds = KINDS[s["type"]]
         if s["kind"] not in kinds:
             out.append(f"{who}: kind {s['kind'] or '(empty)'} is not one of {', '.join(kinds)} for a {s['type']} source")
         # Which MCP server a source is reached through only has to be written down when there's more than
@@ -150,6 +162,8 @@ def problems():
             out.append(f"{who}: location is required for a {s['kind']} source")
         elif s["kind"] == "folder" and not os.path.isdir(s["location"]):
             out.append(f"{who}: folder {s['location']} not found — it may be unmounted; don't guess another path")
+        if s["kind"] == "ical" and not s["location"].startswith(("https://", "http://", "webcal://")):
+            out.append(f"{who}: location must be the iCal feed URL")
         if s["type"] == "chat" and s["kind"] == "slack" and not s["location"]:
             out.append(f"{who}: location (the workspace URL) is required to build message permalinks")
         if s["type"] == "chat" and not s["account"]:
@@ -163,14 +177,14 @@ if __name__ == "__main__":
     print(f"config file: {PATH}{'' if os.path.exists(PATH) else ' (MISSING: follow ONBOARDING.md)'}")
     for k in ("owner", "timezone", "github_repo", "port"):
         print(f"{k}: {CFG[k] or '(not set)'}")
-    for type_ in ("chat", "meetings"):
+    for type_ in TYPES:
         got = sources(type_)
         print(f"\n{type_} sources ({len(got)}):" if got else f"\n{type_} sources: none")
         for s in got:
             print(f"  [{s['id']}] {s['name']} — kind {s['kind'] or '(none)'}"
                   + (f", tools “{s['tools']}”" if s["tools"] else "")
                   + (f", account {s['account']}" if s["account"] else "")
-                  + (f", at {s['location']}" if s["location"] else ""))
+                  + (f", at {masked(s)}" if s["location"] else ""))
             if s["url_template"]:
                 print(f"      links: {s['url_template']}")
             if s["note"]:

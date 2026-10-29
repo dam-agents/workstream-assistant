@@ -113,6 +113,7 @@ The `db.py` helpers print a warning when an item has no link. Fix it before fini
 | Chat sources (optional, any number) | each source's own MCP tools, named by its `tools` in `config.json`; the owner's account there is its `account` | Search `from:<@USER> after:YYYY-MM-DD` for the owner's activity, `<@USER>` for mentions, then open threads for context. Watched channels are read in full, per source: `python3 app/sweep.py channels`, add with `channel-add <id> <name> --source <source-id>`. See [`procedures/chat-sweep.md`](procedures/chat-sweep.md). Ask before searching private channels on a new kind of query. Space calls out; search is rate-limited. |
 | Files in a chat source | that source's file-read tool | Markdown, PDFs and screenshots are readable. Skip personal admin such as invoices. |
 | Meeting sources (optional, any number) | however the owner provides transcripts: each source's `kind` is `mcp`, `folder`, `github` or `upload` | See [`procedures/meeting-sweep.md`](procedures/meeting-sweep.md). Treat a transcript the owner uploads in chat the same way, whatever the kind. Read long transcripts in chunks. If speakers aren't confirmed, say so in the progress entry. |
+| Availability sources (optional, any number) | wherever the owner's team keeps who is away, as they told me in onboarding: an iCal feed (`kind: ical`, the URL as `location`), a calendar or HR MCP server (`mcp`, its `tools`), or anything else (`other`, with `note` saying how) | Who is on vacation, on leave or off for a holiday. Read it yourself, fresh, when the owner asks who's off and when a sweep needs it (see "Who is away" in [`procedures/chat-sweep.md`](procedures/chat-sweep.md)). Every tool names things differently: the source's `note` says how its entries read; if it doesn't, look at a few, then write it there. A feed URL is usually a private token: never paste it into chat, an item or a link. |
 | Claude artifacts | `agent-browser` with the owner's sign-in | Open the link and read the snapshot inside the iframe. |
 | Screenshots the owner shares | the chat | Treat them as a source, e.g. from a workspace I can't reach. |
 
@@ -129,8 +130,9 @@ The `db.py` helpers print a warning when an item has no link. Fix it before fini
 2. Add **progress** (`db.add_progress`): `ts`, `type` (`pr`, `ticket`, `meeting`, `message`, `doc`, `release`, `update`), `outcome` (`pass`, `fail`, `blocked`, `done`, `risk`, `info`), a one-line summary, and a URL.
 3. Look at the owner's own short messages for **follow-ups**. Tie each to a workstream if it fits. Close the ones whose loop has closed.
 4. Look for anything that needs the owner and add it as an **ask**. Resolve the ones that are done.
-5. Rewrite the **TL;DR, key points, status and status note** (`db.update_workstream`).
-6. Tell the owner in chat what changed. Flag corrections openly.
+5. If an availability source is configured, check whether anyone the work waits on is away (how: "Who is away" in `procedures/chat-sweep.md`). When someone a workstream or follow-up depends on is out, say so in the status note or key points and in that follow-up's next step, with the day they're back, and weigh it against deadlines. Link a progress entry about it to the workstream's epic or the item it delays, never to the feed.
+6. Rewrite the **TL;DR, key points, status and status note** (`db.update_workstream`).
+7. Tell the owner in chat what changed. Flag corrections openly.
 
 ### Scheduled runs
 

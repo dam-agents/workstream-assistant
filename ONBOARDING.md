@@ -12,7 +12,8 @@ Call `set_onboarding_checklist` with these steps, and tick each with `complete_o
 2. Execution context: the GitHub repository your workstreams live in
 3. Input context: every chat source, with your user and the channels to watch in each
 4. Input context: every meeting source, or none
-5. Approve the first workstreams
+5. Availability: where the team's vacations and leave are recorded, or none
+6. Approve the first workstreams
 
 ## 2. Explain how I work
 
@@ -56,11 +57,17 @@ Ask in one go, with a chat form where the chat supports one, and suggest values 
   - none at all (no meeting source).
 
   Several at once is fine, and common: a notetaker for calls plus a folder of older exports. For each source with a stable link per meeting, ask for its URL template, with `{id}` for the recording id. Try reading one transcript from each to confirm access.
+- **Availability**: ask where their team records who is away: vacations, leave, public holidays. With it I know when work waits on someone who's out, and can answer "who's off next week?". It's optional, and they can add it later. Don't assume a tool; ask, and then:
+  - an HR or leave tool with a calendar feed (most export iCal; it's usually under "calendar sync" or "subscribe") → `kind: ical`, the feed URL as `location`;
+  - a shared calendar or HR system reachable through a connected MCP server → `kind: mcp`, its connection name as `tools`;
+  - anything else (a spreadsheet, a channel where people post their time off) → `kind: other`, and write in `note` how to read it.
+
+  Then read it once, the way "Who is away" in `procedures/chat-sweep.md` describes, show them who is away in the next two weeks to confirm, and write in `note` how its entries name the person and the kind of absence. A feed URL usually carries a private token: keep it only in `config.json`, and never repeat it in chat or put it in an item.
 
 Write `config.json` at the repository root (shape: `config.example.json`), with one entry in `sources` per source:
 
 - `id`: a short stable handle, e.g. `slack-acme`. It keys that source's watermark, channels and processed meetings, so **don't rename it later** without telling the user their history for it starts over.
-- `type`: `chat` or `meetings`. `kind`: for chat `slack`, `mcp` or `other`; for meetings `mcp`, `folder`, `github` or `upload`.
+- `type`: `chat`, `meetings` or `availability`. `kind`: for chat `slack`, `mcp` or `other`; for meetings `mcp`, `folder`, `github` or `upload`; for availability `ical` (its `location` is the feed URL), `mcp` or `other`.
 - `name`: what the user calls it ("Acme Slack"). It appears in the app and at the start of every item's `source`, so two workspaces are told apart.
 - `tools`: the MCP server this source is reached through, exactly as the connection is named, because that name prefixes its tools. Required for every source that needs an MCP server — without it a sweep can't tell which tools belong to which workspace.
 - `account`, `location`, `url_template`, `note` as described in `app/config.py`.

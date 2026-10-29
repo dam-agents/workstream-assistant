@@ -45,6 +45,14 @@
       "kind": "folder",
       "name": "Box transcripts",
       "location": "/home/agent/box/Meeting transcripts"
+    },
+    {
+      "id": "vacations",
+      "type": "availability",
+      "kind": "ical",
+      "name": "Acme vacations",
+      "location": "https://hr.example.com/ical_feed/SECRET-TOKEN",
+      "note": "Vacations, leave and public holidays for the Acme team. SUMMARY reads '<Name> - <Vacation|Sick day|…>'; public holidays have no name."
     }
   ],
   "port": 5555
