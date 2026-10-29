@@ -11,7 +11,7 @@ New entries go under **Unreleased** in the pull request that makes the change (s
 ### Who is away: vacation and leave calendars
 
 - A new kind of source, **availability**: wherever the team records vacations, leave and holidays. Onboarding asks the owner where that is: an iCal feed from their HR tool (`kind: ical`), a calendar reachable through an MCP server (`mcp`), or anything else (`other`, with a note on how to read it).
-- There's no parser: the agent reads the source itself, as "Who is away" in `procedures/chat-sweep.md` describes, and keeps in the source's `note` how its entries are written.
+- There's no parser: the agent reads the source itself with the new **who-is-away** skill (`.claude/skills/who-is-away/SKILL.md`), and keeps in the source's `note` how its entries are written.
 - The chat sweep notes when someone the open work waits on is away, in follow-up next steps and workstream status. The prebrief checks the attendees. Ask "who's off next week?" any time.
 - A feed URL is a private token: it stays in `config.json`, and `config.py` and `sweep.py sources` only show it masked.
 

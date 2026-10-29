@@ -181,7 +181,7 @@ def state(conn, which):
             f"W{r['ref']} {r['name']} ({r['reject_reason'] or 'no reason'})" for r in rej))
     avail = config.sources("availability")
     if avail:
-        print("\nAvailability sources (read them yourself, see “Who is away” in procedures/chat-sweep.md): "
+        print("\nAvailability sources (read them with the who-is-away skill): "
               + "; ".join(f"[{a['id']}] {a['name']} — {a['kind']}" + (f" ({a['note']})" if a["note"] else "") for a in avail))
     if type_ == "chat":
         import checks
@@ -216,7 +216,7 @@ def main():
                       + (f", tools “{s['tools']}”" if s["tools"] else "")
                       + (f", at {config.masked(s)}" if s["location"] else "")
                       + (f"\n      last sweep: {last or 'never'}{extra}" if type_ != "availability"
-                         else "\n      read when needed: see “Who is away” in procedures/chat-sweep.md"))
+                         else "\n      read when needed: the who-is-away skill"))
         probs = config.problems()
         if probs:
             print("\nProblems:")

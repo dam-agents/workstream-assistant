@@ -62,7 +62,7 @@ Ask in one go, with a chat form where the chat supports one, and suggest values 
   - a shared calendar or HR system reachable through a connected MCP server → `kind: mcp`, its connection name as `tools`;
   - anything else (a spreadsheet, a channel where people post their time off) → `kind: other`, and write in `note` how to read it.
 
-  Then read it once, the way "Who is away" in `procedures/chat-sweep.md` describes, show them who is away in the next two weeks to confirm, and write in `note` how its entries name the person and the kind of absence. A feed URL usually carries a private token: keep it only in `config.json`, and never repeat it in chat or put it in an item.
+  Then read it once with the **who-is-away** skill, show them who is away in the next two weeks to confirm, and write in `note` how its entries name the person and the kind of absence. A feed URL usually carries a private token: keep it only in `config.json`, and never repeat it in chat or put it in an item.
 
 Write `config.json` at the repository root (shape: `config.example.json`), with one entry in `sources` per source:
 

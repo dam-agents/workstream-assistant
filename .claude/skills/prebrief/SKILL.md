@@ -37,7 +37,7 @@ Then: `python3 app/prebrief.py new <W3|-> "<title>" --when <ISO> --with "<attend
 - What the attendees want from the owner: open asks they raised.
 - The last time these people met: search the meeting sources for the previous call with them (`debrief-show` of a recent debrief, or that source's search), and its prebrief in the archive, if any, for loops left open.
 - Recent messages with them in the chat sources, only when the database looks thin or stale.
-- Who is away around the call, when an availability source is configured: read it the way "Who is away" in `procedures/chat-sweep.md` describes, for the attendees and anyone whose work the call depends on, around the call date. An attendee off the week after, or a reviewer out before a deadline, belongs under **Watch for**.
+- Who is away around the call, when an availability source is configured: use the **who-is-away** skill for the attendees and anyone whose work the call depends on, around the call date. An attendee off the week after, or a reviewer out before a deadline, belongs under **Watch for**.
 - Respect "Stay on topic" in AGENTS.md and the owner's memory notes about who must not see what.
 
 ### 3. Draft, then iterate
