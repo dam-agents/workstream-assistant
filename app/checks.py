@@ -1,4 +1,5 @@
-"""Close loops automatically: each open ask / follow-up can carry a done check (check_spec, JSON).
+"""Close loops automatically: each open ask / follow-up / deadline can carry a done check (check_spec, JSON).
+A deadline whose check passes is marked met.
 
   python3 app/checks.py list               every open item with its check and current result
   python3 app/checks.py verify             run the checks, print what passes, change nothing
@@ -100,6 +101,8 @@ def open_items(conn):
     for kind in ("asks", "followups"):
         for r in conn.execute(f"SELECT * FROM {kind} WHERE done_at IS NULL ORDER BY id"):
             items.append((kind, dict(r)))
+    for r in conn.execute("SELECT * FROM deadlines WHERE state = 'open' ORDER BY due"):
+        items.append(("deadlines", dict(r)))
     return items
 
 
@@ -119,6 +122,8 @@ def evaluate(conn):
 
 def label(kind, it):
     where = it.get("workstream_id") or "loose"
+    if kind == "deadlines":
+        return f"[deadline {it['id']} · {where} · due {it['due'][:10]}] {it['text']}"
     return f"[{'ask' if kind == 'asks' else 'follow-up'} {it['id']} · {where}] {it['text']}"
 
 
@@ -136,7 +141,10 @@ def main():
         for k, it, d in passing:
             print(f"DONE {label(k, it)}: {d}")
             if apply:
-                (db.resolve_ask if k == "asks" else db.resolve_followup)(conn, it["id"])
+                if k == "deadlines":
+                    db.close_deadline(conn, it["id"], "met", d)
+                else:
+                    (db.resolve_ask if k == "asks" else db.resolve_followup)(conn, it["id"])
         for k, it, ok, d in results:
             if ok is None and d.startswith("CHECK ERROR"):
                 print(f"{label(k, it)}: {d}", file=sys.stderr)

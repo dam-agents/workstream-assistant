@@ -1,4 +1,4 @@
-"""Add workstream suggestions (state='suggested') from a JSON file, with their first progress, asks and follow-ups.
+"""Add workstream suggestions (state='suggested') from a JSON file, with their first progress, asks, follow-ups and deadlines.
 
   python3 app/suggest.py suggestions.json
 
@@ -37,6 +37,11 @@ EXAMPLE = [
              "source": "Slack DM", "url": "https://acme.slack.com/archives/D01/p1792403368448759",
              "check_spec": {"type": "gh_tag", "prefix": "v0.4.0-rc2", "contains": "v0.3.9"}},
         ],
+        "deadlines": [
+            {"text": "v0.4.0 on prod", "due": "2026-10-23", "firm": True, "source": "Slack #release",
+             "url": "https://acme.slack.com/archives/C01/p1792393100000000",
+             "check_spec": {"type": "gh_tag", "prefix": "v0.4.0", "contains": "v0.4.0-rc1"}},
+        ],
     },
 ]
 
@@ -56,6 +61,9 @@ def add(conn, s):
     for f in s.get("followups", []):
         db.add_followup(conn, f["text"], s["id"], f.get("waiting_on", ""), f.get("next_step", ""), f.get("source", ""),
                         f.get("url"), f.get("ts"), json.dumps(f["check_spec"]) if f.get("check_spec") else "", f.get("done_when", ""))
+    for d in s.get("deadlines", []):
+        db.add_deadline(conn, s["id"], d["text"], d["due"], d.get("firm", False), d.get("source", ""), d.get("url"),
+                        json.dumps(d["check_spec"]) if d.get("check_spec") else "", d.get("done_when", ""))
     ref = conn.execute("SELECT ref FROM workstreams WHERE id = ?", (s["id"],)).fetchone()["ref"]
     print(f"suggested W{ref} {s['name']}")
 

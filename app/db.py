@@ -150,7 +150,24 @@ CREATE TABLE IF NOT EXISTS prebriefs (
   updated_at    TEXT NOT NULL,
   archived_at   TEXT
 );
+CREATE TABLE IF NOT EXISTS deadlines (
+  id            INTEGER PRIMARY KEY,
+  workstream_id TEXT NOT NULL REFERENCES workstreams(id),
+  text          TEXT NOT NULL,                 -- the milestone, e.g. "Code freeze" or "v0.4.0 on prod"
+  due           TEXT NOT NULL,                 -- YYYY-MM-DD, or an ISO time when the hour matters
+  original_due  TEXT NOT NULL,                 -- the first date given; differs from due once it slipped
+  firm          INTEGER NOT NULL DEFAULT 0,    -- 1 = hard commitment (release date, customer promise), 0 = internal target
+  source        TEXT NOT NULL DEFAULT '',
+  url           TEXT,
+  check_spec    TEXT NOT NULL DEFAULT '',      -- machine check that it's met (JSON, see checks.py)
+  done_when     TEXT NOT NULL DEFAULT '',
+  state         TEXT NOT NULL DEFAULT 'open' CHECK (state IN ('open','met','missed','dropped')),
+  created_at    TEXT NOT NULL,
+  updated_at    TEXT NOT NULL,
+  closed_at     TEXT
+);
 CREATE INDEX IF NOT EXISTS items_ws ON items(workstream_id);
+CREATE INDEX IF NOT EXISTS deadlines_ws ON deadlines(workstream_id, state);
 CREATE INDEX IF NOT EXISTS asks_ws ON asks(workstream_id);
 CREATE INDEX IF NOT EXISTS progress_ws_ts ON progress(workstream_id, ts);
 """
@@ -304,10 +321,14 @@ def summary(conn):
         last = conn.execute("SELECT MAX(ts) AS ts FROM progress WHERE workstream_id = ?", (w["id"],)).fetchone()["ts"]
         w["last_activity"] = last
         w["stale"] = last is None or last < stale_before
+        nxt = conn.execute("SELECT * FROM deadlines WHERE workstream_id = ? AND state = 'open' ORDER BY due LIMIT 1",
+                           (w["id"],)).fetchone()
+        w["next_deadline"] = dict(nxt) if nxt else None
     loose = rows(conn.execute(
         "SELECT * FROM followups WHERE workstream_id IS NULL AND done_at IS NULL ORDER BY (waiting_on = ?) DESC, ts", (ME,)))
     return {"me": ME, "github_repo": CFG["github_repo"], "generated_at": now(), "app_version": template_version(),
-            "workstreams": tracked, "suggested": suggested, "followups": loose, "debriefs": open_debriefs(conn)}
+            "workstreams": tracked, "suggested": suggested, "followups": loose, "debriefs": open_debriefs(conn),
+            "deadlines": coming_up(conn)}
 
 
 def workstream(conn, ws_id):
@@ -326,6 +347,7 @@ def workstream(conn, ws_id):
     w["followups"] = rows(conn.execute(
         "SELECT * FROM followups WHERE workstream_id = ? AND done_at IS NULL ORDER BY (waiting_on = ?) DESC, ts", (ws_id, ME)))
     w["prebriefs"] = open_prebriefs(conn, ws_id)
+    w["deadlines"] = rows(conn.execute("SELECT * FROM deadlines WHERE workstream_id = ? AND state = 'open' ORDER BY due", (ws_id,)))
     return w
 
 
@@ -454,6 +476,85 @@ def resolve_followup(conn, followup_id):
                      (f["workstream_id"], ts, "update", "done", f"Done: {f['text']}"))
     conn.commit()
     return dict(conn.execute("SELECT * FROM followups WHERE id = ?", (followup_id,)).fetchone())
+
+
+# ---- Deadlines: dated milestones of a workstream ----
+
+HORIZON_DAYS = 14  # the dashboard shows what's overdue or due within this many days
+SOON_DAYS = 7      # an internal target counts as important only this close; a firm deadline always does
+
+
+def _day(due):
+    try:
+        return datetime.fromisoformat(due[:10]).date()
+    except (TypeError, ValueError):
+        raise ValueError(f"due must be YYYY-MM-DD or an ISO time, not {due!r}") from None
+
+
+def days_left(due):
+    """Whole days from today (in the owner's timezone) to the due date; negative when overdue."""
+    return (_day(due) - datetime.now(TZ).date()).days
+
+
+def add_deadline(conn, ws_id, text, due, firm=False, source="", url=None, check_spec="", done_when=""):
+    """A dated milestone of a workstream: "Code freeze" on 2026-11-02. Resolve relative dates ("by Friday")
+    against the message's time before calling. Give it a done check whenever a service can show it's met."""
+    _need_link("deadline", text, url)
+    _day(due)  # reject a date that doesn't parse now, not when the dashboard renders it
+    ws_id = resolve_workstream(conn, ws_id) or ws_id
+    ts = now()
+    cur = conn.execute(
+        """INSERT INTO deadlines (workstream_id, text, due, original_due, firm, source, url, check_spec, done_when, created_at, updated_at)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
+        (ws_id, text, due, due, int(bool(firm)), source, url, check_spec, done_when, ts, ts))
+    conn.commit()
+    return cur.lastrowid
+
+
+def move_deadline(conn, deadline_id, due, url=None, reason=""):
+    """The date changed. Keeps original_due, so the app shows the slip, and records it on the timeline."""
+    d = conn.execute("SELECT * FROM deadlines WHERE id = ?", (deadline_id,)).fetchone()
+    if not d:
+        return None
+    _day(due)
+    ts = now()
+    conn.execute("UPDATE deadlines SET due = ?, updated_at = ? WHERE id = ?", (due, ts, deadline_id))
+    later = _day(due) > _day(d["due"])
+    _need_link("progress", d["text"], url or d["url"])
+    conn.execute("INSERT INTO progress (workstream_id, ts, type, outcome, summary, url) VALUES (?,?,?,?,?,?)",
+                 (d["workstream_id"], ts, "update", "risk" if later else "info",
+                  f"Moved: {d['text']}, {d['due'][:10]} → {due[:10]}" + (f" ({reason})" if reason else ""), url or d["url"]))
+    conn.commit()
+    return dict(conn.execute("SELECT * FROM deadlines WHERE id = ?", (deadline_id,)).fetchone())
+
+
+def close_deadline(conn, deadline_id, state="met", note=""):
+    """met, missed or dropped (no longer a goal). Records it on the timeline."""
+    if state not in ("met", "missed", "dropped"):
+        raise ValueError(f"state must be met, missed or dropped, not {state!r}")
+    d = conn.execute("SELECT * FROM deadlines WHERE id = ?", (deadline_id,)).fetchone()
+    if not d:
+        return None
+    ts = now()
+    conn.execute("UPDATE deadlines SET state = ?, closed_at = ?, updated_at = ? WHERE id = ?", (state, ts, ts, deadline_id))
+    conn.execute("INSERT INTO progress (workstream_id, ts, type, outcome, summary, url) VALUES (?,?,?,?,?,?)",
+                 (d["workstream_id"], ts, "update", {"met": "done", "missed": "fail", "dropped": "info"}[state],
+                  f"Deadline {state}: {d['text']} ({d['due'][:10]})" + (f". {note}" if note else ""), d["url"]))
+    conn.commit()
+    return dict(conn.execute("SELECT * FROM deadlines WHERE id = ?", (deadline_id,)).fetchone())
+
+
+def coming_up(conn):
+    """The important open deadlines of tracked workstreams, soonest first: everything overdue, every firm one
+    within HORIZON_DAYS, and internal targets within SOON_DAYS. What the dashboard shows under Coming up."""
+    out = []
+    for d in rows(conn.execute(
+            """SELECT d.*, w.ref AS ws_ref, w.name AS ws_name FROM deadlines d JOIN workstreams w ON w.id = d.workstream_id
+               WHERE d.state = 'open' AND w.state = 'approved' AND w.archived = 0 ORDER BY d.due""")):
+        left = days_left(d["due"])
+        if left <= (HORIZON_DAYS if d["firm"] else SOON_DAYS):
+            out.append(d)
+    return out
 
 
 TEMPLATE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "app.template.html")

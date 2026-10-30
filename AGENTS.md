@@ -22,8 +22,9 @@ What I deliver is the **Workstreams app**: an interactive artifact showing each 
 | **Workstream** | One initiative with a goal and one owner. Handle `W1`, `W2`, … |
 | **Ask** | Something the owner must do. Shown as **Needs you**. |
 | **Follow-up** | A quick open loop, often waiting on someone else. |
+| **Deadline** | A dated milestone of a workstream, e.g. "Code freeze Mon Nov 2". Hard (a commitment) or a target. |
 | **Progress** | The evidence timeline: PRs, tickets, messages, meetings, releases. |
-| **Done check** | How I can tell an ask or follow-up is finished: `check_spec` (machine) or `done_when` (words). |
+| **Done check** | How I can tell an ask, follow-up or deadline is finished: `check_spec` (machine) or `done_when` (words). |
 
 ## Workstreams
 
@@ -62,9 +63,23 @@ An ask or follow-up usually has an **expected outcome in some service**: release
 
 `python3 app/checks.py list` shows every open item with its current result; `verify --apply` closes the ones that pass. Test a new check with `list` right after adding it: a check that errors never closes.
 
+### Deadlines
+
+A **deadline** is a dated milestone of a workstream: "Code freeze Mon Nov 2", "v0.4.0 on prod Fri Nov 6". A workstream can have several. Only workstreams have deadlines; asks and follow-ups don't.
+
+- **Add** one with `db.add_deadline(conn, ws, text, due, firm, source, url, check_spec, done_when)`. `due` is `YYYY-MM-DD`, or an ISO time when the hour matters. Resolve relative dates ("by Friday", "end of next week") against the time of the message that set them, in the configured timezone.
+- **`firm=True`** for a hard commitment: a release date, a promise to a customer or another team. Leave it `False` for an internal target.
+- **Where dates come from:** what people agree in chat and meetings, GitHub milestones (`due_on`), release plans. The link points to where the date was set.
+- **Give it a done check**, like an ask. When the check passes, `checks.py verify --apply` marks it met.
+- **When the date moves**, call `db.move_deadline(conn, id, new_due, url, reason)`. Never add a second deadline for the same milestone. It keeps the first date, so the app shows "was Mon 2 Nov", and records the slip on the timeline.
+- **When it's past**, the chat sweep lists it as overdue. Find out what happened and record it: `move_deadline`, or `db.close_deadline(conn, id, "met" | "missed" | "dropped", note)`.
+- **Status:** a hard deadline within 7 days with an open blocker makes the workstream `red`.
+
+The dashboard shows the important ones under **Coming up**: everything overdue, hard deadlines in the next 14 days, and targets in the next 7.
+
 ### Every item links to its source
 
-Every ask, follow-up and progress entry **must have a URL** pointing at exactly what it refers to. In the app, the item's text is the link.
+Every ask, follow-up, deadline and progress entry **must have a URL** pointing at exactly what it refers to. In the app, the item's text is the link.
 
 | Source | Link |
 |---|---|
@@ -94,10 +109,11 @@ The `db.py` helpers print a warning when an item has no link. Fix it before fini
 
 **Keep it short.** Report only what matters, and lead with the TL;DR.
 
-- **Dashboard:** a "N things need you" line, then one row per workstream: Needs-you badge, status, name, one-line note, owner, last activity, **Detail →**. Workstreams that need the owner come first. Then loose **Follow-ups**, then **Suggested workstreams**. Nothing else.
+- **Dashboard:** a "N things need you" line, then **Coming up** (the important deadlines), then one row per workstream: Needs-you badge, status, next deadline, name, one-line note, owner, last activity, **Detail →**. Workstreams that need the owner come first. Then loose **Follow-ups**, then **Suggested workstreams**. Nothing else.
 - **Workstream page:**
   - **Needs you**: the open asks, each with a Done button (only when there are any).
   - **TL;DR**: 2–3 sentences on where it stands toward the goal.
+  - **Deadlines**: its open deadlines, soonest first (only when there are any).
   - **Key points**: at most ~5 bullets, `Label: text` (Blocker, On you, Next, Done when…). `#123` becomes a link to `github_repo`.
   - **Follow-ups** tied to it (only when there are any).
   - **Prebriefs**: open prebriefs for upcoming calls, and a **Prebrief a call** button.
@@ -130,9 +146,10 @@ The `db.py` helpers print a warning when an item has no link. Fix it before fini
 2. Add **progress** (`db.add_progress`): `ts`, `type` (`pr`, `ticket`, `meeting`, `message`, `doc`, `release`, `update`), `outcome` (`pass`, `fail`, `blocked`, `done`, `risk`, `info`), a one-line summary, and a URL.
 3. Look at the owner's own short messages for **follow-ups**. Tie each to a workstream if it fits. Close the ones whose loop has closed.
 4. Look for anything that needs the owner and add it as an **ask**. Resolve the ones that are done.
-5. If an availability source is configured, check whether anyone the work waits on is away (the **who-is-away** skill). When someone a workstream or follow-up depends on is out, say so in the status note or key points and in that follow-up's next step, with the day they're back ("Cleo is off until Fri Oct 30, back Mon Nov 2"), and weigh it against deadlines. Don't repeat an absence already noted. Link a progress entry about it to the workstream's epic or the item it delays, never to the feed.
-6. Rewrite the **TL;DR, key points, status and status note** (`db.update_workstream`).
-7. Tell the owner in chat what changed. Flag corrections openly.
+5. If an availability source is configured, check whether anyone the work waits on is away (the **who-is-away** skill). When someone a workstream or follow-up depends on is out, say so in the status note or key points and in that follow-up's next step, with the day they're back ("Cleo is off until Fri Oct 30, back Mon Nov 2"), and weigh it against the workstream's deadlines. Don't repeat an absence already noted. Link a progress entry about it to the workstream's epic or the item it delays, never to the feed.
+6. Keep the **deadlines** current: add one when a milestone gets a date, move it when the date changes, close the ones that passed (see Deadlines above).
+7. Rewrite the **TL;DR, key points, status and status note** (`db.update_workstream`).
+8. Tell the owner in chat what changed. Flag corrections openly.
 
 ### Scheduled runs
 
@@ -167,7 +184,7 @@ I don't post to Slack, create, comment on or close GitHub issues, or share artif
 
 The **Workstreams** artifact (interactive, private) reads live data from SQLite (`data/wsa.db`) through a small API server on `127.0.0.1:<port>` (5555). The code is in `app/`; see [`app/README.md`](app/README.md) before changing the UI, the API or the schema, or publishing a new version.
 
-- **Update data** with the helpers in `app/db.py`: `add_workstream`, `update_workstream`, `add_progress`, `add_ask`/`resolve_ask`, `add_followup`/`resolve_followup` (give asks and follow-ups a `check_spec`/`done_when`), `add_item`/`update_item`, `rejected`. No republish needed.
+- **Update data** with the helpers in `app/db.py`: `add_workstream`, `update_workstream`, `add_progress`, `add_ask`/`resolve_ask`, `add_followup`/`resolve_followup`, `add_deadline`/`move_deadline`/`close_deadline` (give asks, follow-ups and deadlines a `check_spec`/`done_when`), `add_item`/`update_item`, `rejected`. No republish needed.
 - **Server down?** `python3 app/sweep.py ensure-server`.
 
 ## Kit Updates and the changelog
