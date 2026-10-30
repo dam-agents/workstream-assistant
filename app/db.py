@@ -261,10 +261,20 @@ def rows(cur):
     return [dict(r) for r in cur.fetchall()]
 
 
+def epic_label_for(url, label=None):
+    """The label shown for a workstream's epic link: the one given, else '#N' for a GitHub issue or PR,
+    else 'Link'. A link never goes without a label: the app shows the label as the link's text."""
+    if label and label.strip() or not url:
+        return label
+    m = re.search(r"/(?:issues|pull)/(\d+)", url)
+    return f"#{m.group(1)}" if m else "Link"
+
+
 def add_workstream(conn, ws_id, name, goal="", owner="", roles="", status="amber", status_note="",
                    tldr="", key_points="", state="suggested", epic_label=None, epic_url=None):
     """New workstream. The agent adds candidates as 'suggested'; the owner approves or rejects them in the app."""
     ts = now()
+    epic_label = epic_label_for(epic_url, epic_label)
     conn.execute(
         """INSERT INTO workstreams (id, name, goal, owner, roles, status, status_note, tldr, key_points, state,
                                    epic_label, epic_url, created_at, updated_at)
@@ -404,6 +414,10 @@ def update_workstream(conn, ws_id, fields):
     if not fields:
         return
     ws_id = resolve_workstream(conn, ws_id) or ws_id
+    if "epic_url" in fields or "epic_label" in fields:
+        cur = conn.execute("SELECT epic_label, epic_url FROM workstreams WHERE id = ?", (ws_id,)).fetchone()
+        url = fields.get("epic_url", cur["epic_url"] if cur else None)
+        fields["epic_label"] = epic_label_for(url, fields.get("epic_label", cur["epic_label"] if cur else None))
     fields["updated_at"] = now()
     conn.execute(f"UPDATE workstreams SET {', '.join(f'{k} = ?' for k in fields)} WHERE id = ?", (*fields.values(), ws_id))
     conn.commit()

@@ -8,6 +8,13 @@ New entries go under **Unreleased** in the pull request that makes the change (s
 
 ## Unreleased
 
+### A workstream's epic link can no longer blank its page
+
+- A workstream with an epic link but no label made its page fail with "Cannot read properties of null (reading 'split')". The app now falls back to "Link".
+- `add_workstream` and `update_workstream` fill in a label themselves when a link has none: `#N` for a GitHub issue or PR, else `Link`.
+
+**After updating:** republish the app (`app/README.md`, Publishing).
+
 ### Deadlines: dated milestones, and what's coming up
 
 - A workstream can now have **deadlines**: dated milestones such as "Code freeze Mon Nov 2" or "v0.4.0 on prod Fri Nov 6". Each one is hard (a commitment) or a target, and links to where the date was set.
