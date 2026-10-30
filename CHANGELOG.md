@@ -8,6 +8,16 @@ New entries go under **Unreleased** in the pull request that makes the change (s
 
 ## Unreleased
 
+### Deadlines: dated milestones, and what's coming up
+
+- A workstream can now have **deadlines**: dated milestones such as "Code freeze Mon Nov 2" or "v0.4.0 on prod Fri Nov 6". Each one is hard (a commitment) or a target, and links to where the date was set.
+- The dashboard has a **Coming up** block: everything overdue, hard deadlines in the next 14 days and targets in the next 7. Each workstream row shows its next deadline, and the workstream page lists all of them under the TL;DR.
+- When a date moves, the agent moves the deadline instead of adding a new one, so the app shows "was Mon 2 Nov" and the slip lands on the timeline.
+- Deadlines take done checks like asks: `checks.py verify --apply` marks them met. The chat sweep's precheck lists the overdue ones, and the sweep records whether each was met, moved or missed.
+- New `deadlines` table (created on the next `db.connect()`), and `add_deadline` / `move_deadline` / `close_deadline` in `app/db.py`. `app/suggest.py` takes `deadlines` too.
+
+**After updating:** republish the app (`app/README.md`, Publishing), and restart the API server.
+
 ### Who is away: vacation and leave calendars
 
 - A new kind of source, **availability**: wherever the team records vacations, leave and holidays. Onboarding asks the owner where that is: an iCal feed from their HR tool (`kind: ical`), a calendar reachable through an MCP server (`mcp`), or anything else (`other`, with a note on how to read it).

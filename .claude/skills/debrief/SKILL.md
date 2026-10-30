@@ -90,6 +90,7 @@ Name the meeting's source at the start of each `source` field ("Notetaker: weekl
 | New ask for the owner | `add_ask`, with a link and a done check (`check_spec` and/or `done_when`) |
 | Loop waiting on someone | `add_followup`, same rules |
 | Closed loop | `resolve_ask` / `resolve_followup` |
+| A milestone got a date, or its date moved | `add_deadline` / `move_deadline` (see Deadlines in AGENTS.md) |
 | Status, TL;DR, key points | `update_workstream` (rewrite them as text, do not append) |
 | Decision | `add_progress` with `type_="update"` or `"meeting"` and the link (there is no decisions helper) |
 | Correction of earlier data | fix it, and say in the progress entry what was wrong |

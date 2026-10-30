@@ -185,10 +185,16 @@ def state(conn, which):
               + "; ".join(f"[{a['id']}] {a['name']} — {a['kind']}" + (f" ({a['note']})" if a["note"] else "") for a in avail))
     if type_ == "chat":
         import checks
-        print("\nOpen asks and follow-ups with their done check (DONE = the service shows it's finished):")
-        for k, it, ok, d in checks.evaluate(conn):
+        print("\nOpen asks, follow-ups and deadlines with their done check (DONE = the service shows it's finished):")
+        results = checks.evaluate(conn)
+        for k, it, ok, d in results:
             mark = {True: "DONE", False: "open", None: "judge"}[ok]
             print(f"  {mark:5} {checks.label(k, it)}  ->  {d}")
+        overdue = [it for k, it, ok, d in results if k == "deadlines" and not ok and db.days_left(it["due"]) < 0]
+        if overdue:
+            print("\nOverdue deadlines (find out whether each was met, moved or missed, and record it):")
+            for it in overdue:
+                print(f"  {checks.label('deadlines', it)}")
     todo = [s["id"] for s, ok in have if ok]
     if not todo:
         print(f"\nNothing new in any {type_} source; skipping.")
