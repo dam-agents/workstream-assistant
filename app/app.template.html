@@ -459,7 +459,7 @@ function renderWorkstream(a) {
   $('view').innerHTML = draft + `
     <div class="ad-head">
       <div class="ad-title">${refTag(a)}${esc(a.name)} ${pill(WS_STATUS[a.status])}</div>
-      <div class="muted">${esc(a.owner)}${a.epic_url ? ` · ${link(a.epic_label.split(' ')[0], a.epic_url)}` : ''} · updated ${esc(ago(a.updated_at))}</div>
+      <div class="muted">${esc(a.owner)}${a.epic_url ? ` · ${link((a.epic_label || 'Link').split(' ')[0], a.epic_url)}` : ''} · updated ${esc(ago(a.updated_at))}</div>
     </div>
     ${(a.asks || []).length ? `<div class="needs-box"><div class="lbl">Needs you · ${a.asks.length}</div>
       ${a.asks.map((k) => `<div class="ask"><div class="ask-main"><div>${itemText(k.text, k.url)}</div>
