@@ -100,9 +100,10 @@ def chat_state(conn, src):
         print(f"Note: {src['note']}")
     chans = db.channels(conn, src["id"])
     print(f"Channels to read in full ({len(chans)}): every new message, not only the owner's"
-          if chans else "Channels to read in full: none (only the owner's messages and mentions of them)")
+          if chans else "Channels to read in full: none")
     for ch in chans:
         print(f"  - {ch['name']} ({ch['id']})")
+    print("Also read: every conversation the owner is in (public and private channels, DMs, group DMs) for anything new about their work, plus their own messages and mentions of them.")
     print(f"Items from this source use source “{src['name']} …”, so the owner can tell them apart.")
     return True
 
