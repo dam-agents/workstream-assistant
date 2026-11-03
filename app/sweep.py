@@ -34,6 +34,8 @@ from config import CFG  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 LOG = "/tmp/wsa-api.log"
+SERVICE = "wsa-api"  # the kit's startup item: an openrc user service running server.py
+SERVICE_SCRIPT = os.path.expanduser(f"~/.config/rc/init.d/{SERVICE}")
 FIRST_SWEEP_DAYS = 7  # a source that has never been swept is read this far back
 
 
@@ -288,6 +290,11 @@ def main():
         d = fn(conn, argv[1]) if cmd == "debrief-start" else fn(conn, argv[1], " ".join(argv[2:]))
         print(f"debrief #{d['id']} {d['state']}" if d else f"no debrief {argv[1]}")
     elif cmd == "ensure-server":
+        if not server_up() and os.path.exists(SERVICE_SCRIPT):
+            # restart, not start: openrc may think a hung or crashed server is still running
+            subprocess.run(["rc-service", "--user", SERVICE, "restart"],
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            time.sleep(1.5)
         if not server_up():
             subprocess.Popen(["python3", os.path.join(HERE, "server.py")], cwd=HERE,
                              stdout=open(LOG, "a"), stderr=subprocess.STDOUT, start_new_session=True)
