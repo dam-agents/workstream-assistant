@@ -8,6 +8,14 @@ New entries go under **Unreleased** in the pull request that makes the change (s
 
 ## Unreleased
 
+### The API server starts at every boot
+
+- The kit now declares the API server as a startup item, `wsa-api`: an openrc user service that starts `app/server.py` at every boot and restarts it when it exits, so the app is live after a restart without waiting for the next sweep. It shows as a Login item.
+- It runs `python3` from `PATH`. A service written by hand with a versioned path such as `/usr/share/mise/installs/python/3.12.14/bin/python3` stopped working when a new image brought another Python patch release.
+- `sweep.py ensure-server` restarts the service when the server doesn't answer, and falls back to starting `server.py` itself only when there is no service.
+
+**After updating:** a Kit Update doesn't install startup items, so write the service yourself unless `~/.config/rc/init.d/wsa-api` already exists with `command="python3"`: put an openrc script there with `description="Workstream Assistant API server (127.0.0.1:5555)"`, `command="python3"` and `command_args="/home/agent/work/app/server.py"`; link it with `ln -sf ~/.config/rc/init.d/wsa-api ~/.config/rc/runlevels/default/`; stop any server started by `ensure-server` (`pkill -f app/server.py`); then `rc-service --user wsa-api restart`, and check `curl -s 127.0.0.1:5555/api/health`.
+
 ### The chat sweep reads every conversation, private ones included
 
 - The chat sweep now looks at everything new in every conversation the owner is in, like their unread messages: public and private channels, DMs and group DMs, not only the watched channels and public search. Before, a mention in a private channel (e.g. a message forwarded to the owner in a private leads channel) was never found.

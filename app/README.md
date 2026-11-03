@@ -36,7 +36,8 @@ The artifact is "Workstreams", interactive and private. Keep its id in memory.
 
 ## Running it
 
-- The server stops when the agent hibernates. `python3 app/sweep.py ensure-server` starts it; every schedule's precheck does too.
+- The server runs as the kit's startup item `wsa-api`: an openrc user service (`~/.config/rc/init.d/wsa-api`, log in `~/.local/state/rc/wsa-api.log`) that starts at every boot and restarts when it exits. It calls `python3` from `PATH`, never a versioned interpreter path, so a new image with another Python patch release doesn't break it. The owner sees it as a Login item.
+- `python3 app/sweep.py ensure-server` restarts that service when the server doesn't answer, and starts `server.py` directly only when the service is missing or fails (log in `/tmp/wsa-api.log`). The sweep prechecks call it.
 - When the server is down, the page shows its built-in snapshot and a Retry button. Rebuild and republish now and then so the snapshot isn't too old.
 
 ## Rules for the UI

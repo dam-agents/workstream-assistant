@@ -57,6 +57,12 @@ connections:
       from a mounted folder, a GitHub repository or chat uploads, or not at all.
       Onboarding asks which sources you have.
 
+startupItems:
+  - name: wsa-api
+    description: The Workstreams app's API server on 127.0.0.1:5555, started at every boot.
+    command: python3
+    args: [/home/agent/work/app/server.py]
+
 schedules:
   - name: "Workstream Assistant: chat sweep"
     description: Reads new activity in every connected chat source every weekday hour and updates workstreams, asks and follow-ups.
