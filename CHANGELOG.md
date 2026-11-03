@@ -8,6 +8,13 @@ New entries go under **Unreleased** in the pull request that makes the change (s
 
 ## Unreleased
 
+### The chat sweep reads every conversation, private ones included
+
+- The chat sweep now looks at everything new in every conversation the owner is in, like their unread messages: public and private channels, DMs and group DMs, not only the watched channels and public search. Before, a mention in a private channel (e.g. a message forwarded to the owner in a private leads channel) was never found.
+- A mention with little text, such as a forwarded message or a bare `@name`, is opened and read, thread included.
+- A source's `note` can still narrow it, e.g. a partner workspace where the owner wants to be asked first.
+- `sweep.py state chat` says so in every chat source's block.
+
 ### A workstream's epic link can no longer blank its page
 
 - A workstream with an epic link but no label made its page fail with "Cannot read properties of null (reading 'split')". The app now falls back to "Link".
