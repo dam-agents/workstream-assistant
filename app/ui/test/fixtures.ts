@@ -12,6 +12,7 @@ export const ws = (over: Partial<WorkstreamSummary> & { id: string }): Workstrea
   priority_by: '',
   priority_why: '',
   focus: false,
+  rank: null,
   asks_open: 0,
   followups_open: 0,
   last_activity: null,

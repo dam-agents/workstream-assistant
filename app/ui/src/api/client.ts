@@ -1,5 +1,5 @@
 import { hasPlatform, rawRequest } from './platform';
-import type { Debrief, Snapshot, Summary, Workstream, WorkstreamPatch } from './types';
+import type { Debrief, GroupKey, Snapshot, Summary, Workstream, WorkstreamPatch } from './types';
 
 /** Why a request failed, so the page can say what to do about it. */
 export type FailReason = 'no-platform' | 'app-not-listening' | 'timeout' | 'http' | 'unknown';
@@ -52,6 +52,8 @@ export const api = {
   summary: () => call<Summary>('GET', '/api/summary'),
   workstream: (id: string) => call<Workstream>('GET', `/api/workstreams/${id}`),
   patchWorkstream: (id: string, patch: WorkstreamPatch) => call<Workstream>('PATCH', `/api/workstreams/${id}`, patch),
+  /** Save a dashboard group's order after a drag: each id gets that group and its position. */
+  arrange: (group: GroupKey, ids: string[]) => post<Summary>('/api/arrange', { group, ids }),
   approve: (id: string) => post(`/api/workstreams/${id}/approve`),
   reject: (id: string, reason: string) => post(`/api/workstreams/${id}/reject`, { reason }),
   askDone: (id: number) => post(`/api/asks/${id}/done`),

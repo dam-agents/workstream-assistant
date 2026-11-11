@@ -1,7 +1,7 @@
 // Dashboard ordering: priority groups, and the order within one.
-import type { Priority, Status, WorkstreamSummary } from '../api/types';
+import type { GroupKey, Status, WorkstreamSummary } from '../api/types';
 
-export type GroupKey = 'focus' | Priority;
+export type { GroupKey };
 
 export interface Group {
   key: GroupKey;
@@ -24,18 +24,32 @@ const GROUPS: [GroupKey, string][] = [
   ['low', 'Low priority'],
 ];
 
-const groupOf = (w: WorkstreamSummary): GroupKey => (w.focus ? 'focus' : (w.priority ?? 'normal'));
+export const GROUP_KEYS = GROUPS.map(([k]) => k);
 
-/** The dashboard's stack: Focus today, High, Normal, Low; empty groups left out. */
+export const groupOf = (w: WorkstreamSummary): GroupKey => (w.focus ? 'focus' : (w.priority ?? 'normal'));
+
+/** The owner's order first (where they dragged it), then the ones not placed yet, by urgency. */
+export const byPlace = (a: WorkstreamSummary, b: WorkstreamSummary) =>
+  (a.rank ?? Infinity) - (b.rank ?? Infinity) || byUrgency(a, b);
+
+/** The dashboard's stack: Focus today, High, Normal, Low, every group present so it can take a drop. */
 export function groupByPriority(list: WorkstreamSummary[]): Group[] {
-  const sorted = [...list].sort(byUrgency);
-  return GROUPS.map(([key, title]) => ({ key, title, workstreams: sorted.filter((w) => groupOf(w) === key) })).filter(
-    (g) => g.workstreams.length > 0,
-  );
+  const sorted = [...list].sort(byPlace);
+  return GROUPS.map(([key, title]) => ({ key, title, workstreams: sorted.filter((w) => groupOf(w) === key) }));
 }
 
-/** Nothing prioritised yet: the dashboard shows one plain list, as before priorities existed. */
-export const isUngrouped = (groups: Group[]) => groups.length === 1 && groups[0].key === 'normal';
+/** Move one id within or between groups of ids; what a drag does, as a pure function. */
+export function moveId(
+  groups: Record<GroupKey, string[]>,
+  id: string,
+  to: GroupKey,
+  index: number,
+): Record<GroupKey, string[]> {
+  const out = Object.fromEntries(GROUP_KEYS.map((k) => [k, groups[k].filter((x) => x !== id)])) as Record<GroupKey, string[]>;
+  const target = out[to];
+  target.splice(Math.max(0, Math.min(index, target.length)), 0, id);
+  return out;
+}
 
 export const wsRef = (w: { ref: number | null; id: string }) => (w.ref ? `W${w.ref}` : w.id);
 

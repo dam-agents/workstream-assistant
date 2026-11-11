@@ -1,6 +1,6 @@
 import { ago, daysLeft, dueWhen } from '../src/lib/format';
 import { linkifyRefs, sourceKind } from '../src/lib/links';
-import { groupByPriority, isUngrouped, parseKeyPoints } from '../src/lib/workstreams';
+import { groupByPriority, moveId, parseKeyPoints } from '../src/lib/workstreams';
 import { ws } from './fixtures';
 
 const NOW = new Date(2026, 10, 11, 9, 0); // Wed 11 Nov 2026, local time
@@ -26,7 +26,7 @@ describe('deadlines', () => {
 });
 
 describe('priority groups', () => {
-  it('stacks Focus today, High, Normal, Low, and leaves out empty groups', () => {
+  it('stacks Focus today, High, Normal, Low, and keeps empty lanes to drop into', () => {
     const groups = groupByPriority([
       ws({ id: 'a', priority: 'low' }),
       ws({ id: 'b', priority: 'high' }),
@@ -39,18 +39,29 @@ describe('priority groups', () => {
       ['normal', ['d']],
       ['low', ['a']],
     ]);
+    expect(groupByPriority([ws({ id: 'a' })]).map((g) => g.workstreams.length)).toEqual([0, 0, 1, 0]);
   });
   it('puts what needs the owner first, then the riskiest, within a group', () => {
-    const [g] = groupByPriority([
+    const [, , g] = groupByPriority([
       ws({ id: 'green', status: 'green', name: 'A' }),
       ws({ id: 'red', status: 'red', name: 'B' }),
       ws({ id: 'asks', status: 'green', asks_open: 2, name: 'C' }),
     ]);
     expect(g.workstreams.map((w) => w.id)).toEqual(['asks', 'red', 'green']);
   });
-  it('is one plain list until something is prioritised', () => {
-    expect(isUngrouped(groupByPriority([ws({ id: 'a' }), ws({ id: 'b' })]))).toBe(true);
-    expect(isUngrouped(groupByPriority([ws({ id: 'a', priority: 'low' })]))).toBe(false);
+  it('puts the owner\'s order first, then the ones not placed, by urgency', () => {
+    const [, , g] = groupByPriority([
+      ws({ id: 'unplaced-red', status: 'red' }),
+      ws({ id: 'second', rank: 1 }),
+      ws({ id: 'first', rank: 0, status: 'green' }),
+    ]);
+    expect(g.workstreams.map((w) => w.id)).toEqual(['first', 'second', 'unplaced-red']);
+  });
+  it('moves an id within a lane and between lanes', () => {
+    const lanes = { focus: [], high: ['a', 'b'], normal: ['c'], low: [] };
+    expect(moveId(lanes, 'b', 'high', 0)).toEqual({ focus: [], high: ['b', 'a'], normal: ['c'], low: [] });
+    expect(moveId(lanes, 'a', 'low', 5)).toEqual({ focus: [], high: ['b'], normal: ['c'], low: ['a'] });
+    expect(moveId(lanes, 'c', 'focus', 0)).toEqual({ focus: ['c'], high: ['a', 'b'], normal: [], low: [] });
   });
 });
 

@@ -8,6 +8,15 @@ New entries go under **Unreleased** in the pull request that makes the change (s
 
 ## Unreleased
 
+### Drag workstreams between priority lanes
+
+- The dashboard is four lanes stacked top to bottom: **Focus today**, **High**, **Normal** and **Low**. Each row has a handle (⠿): drag it to another lane to change the priority, or to Focus today, or within a lane to put it in your own order. The order is kept.
+- Empty lanes stay visible so you can drop into them. Low stays collapsed until you open it, and opens by itself while you drag.
+- The priority dropdown is gone from the dashboard. A workstream's page has a High / Normal / Low picker instead, and each row keeps its **☆ Today** toggle.
+- Keyboard works too: focus a handle, press Space, move with the arrow keys, Space again to drop.
+
+**After updating:** republish the app (`app/README.md`, Publishing). The database gains a `rank` column on the next `db.connect()`.
+
 ### The app is a TypeScript + React app
 
 - The Workstreams page is rebuilt as a TypeScript + React app in `app/ui/`, styled with Tailwind CSS, instead of one hand-written HTML file. It looks and works the same, priorities included, and keeps the Low priority group open when you come back from a workstream.

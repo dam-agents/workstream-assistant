@@ -87,6 +87,8 @@ interface WorkstreamBase {
   priority_by: '' | 'owner' | 'agent';
   priority_why: string;
   focus: boolean;
+  /** The owner's place for it within its dashboard group; null = not placed yet. */
+  rank: number | null;
   asks_open?: number;
   followups_open?: number;
 }
@@ -136,6 +138,8 @@ export interface Snapshot {
   summary: Summary;
   workstreams: Record<string, Workstream>;
 }
+
+export type GroupKey = 'focus' | Priority;
 
 export interface WorkstreamPatch {
   priority?: Priority;

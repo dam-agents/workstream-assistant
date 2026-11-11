@@ -37,38 +37,38 @@ afterEach(() => {
   globalThis.platform = undefined;
 });
 
-it('shows one plain list while nothing is prioritised', async () => {
-  mockPlatform(summary([ws({ id: 'a' }), ws({ id: 'b' })]));
-  await renderApp();
-  expect(screen.queryByText('Normal', { selector: 'span' })).toBeNull();
-  expect(screen.getAllByText('Detail →')).toHaveLength(2);
-});
+const lane = (name: string) => screen.getByRole('region', { name });
 
-it('stacks by priority, with Low collapsed', async () => {
+it('stacks four lanes, with Low collapsed and saying what needs you', async () => {
   mockPlatform(summary([ws({ id: 'Focused', focus: true }), ws({ id: 'Plain' }), ws({ id: 'Quiet', priority: 'low', asks_open: 1 })]));
   await renderApp();
-  expect(screen.getByText('Focus today')).toBeTruthy();
-  const low = screen.getByText('Low priority').closest('details')!;
-  expect(low.open).toBe(false);
-  expect(within(low).getByText(/1 need you/)).toBeTruthy();
+  expect(within(lane('Focus today')).getByText('Focused')).toBeTruthy();
+  expect(within(lane('High priority')).getByText(/Drag here what matters most/)).toBeTruthy();
+  expect(within(lane('Normal')).getByText('Plain')).toBeTruthy();
+  expect(within(lane('Low priority')).queryByText('Quiet')).toBeNull();
+  expect(within(lane('Low priority')).getByText(/1 need you/)).toBeTruthy();
+  fireEvent.click(screen.getByText('Low priority'));
+  expect(within(lane('Low priority')).getByText('Quiet')).toBeTruthy();
 });
 
-it('saves a priority and focus as the owner, without opening the workstream', async () => {
+it('focus toggles without opening the workstream', async () => {
   const calls = mockPlatform(summary([ws({ id: 'a' })]));
   await renderApp();
-  await act(async () => {
-    fireEvent.change(screen.getByLabelText('Priority'), { target: { value: 'high' } });
-  });
   await act(async () => {
     fireEvent.click(screen.getByText('☆ Today'));
   });
   const patches = calls.filter((c) => c.method === 'PATCH').map((c) => [c.path.split('?')[0], JSON.parse(c.body!)]);
-  expect(patches).toEqual([
-    ['/api/workstreams/a', { priority: 'high' }],
-    ['/api/workstreams/a', { focus: true }],
-  ]);
+  expect(patches).toEqual([['/api/workstreams/a', { focus: true }]]);
   expect(calls.some((c) => c.method === 'GET' && c.path.startsWith('/api/workstreams/a'))).toBe(false);
-  expect(await screen.findByText('Focus today')).toBeTruthy(); // focus wins over its new High priority
+});
+
+it('offers a drag handle per row, and the handle does not open the workstream', async () => {
+  const calls = mockPlatform(summary([ws({ id: 'a', ref: 3 }), ws({ id: 'b' })]));
+  await renderApp();
+  const handle = screen.getByLabelText('Drag W3 to reprioritise');
+  fireEvent.click(handle);
+  expect(calls.some((c) => c.path.startsWith('/api/workstreams/a'))).toBe(false);
+  expect(screen.getAllByLabelText(/to reprioritise/)).toHaveLength(2);
 });
 
 it('falls back to the snapshot without platform', async () => {

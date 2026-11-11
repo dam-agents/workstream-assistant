@@ -44,6 +44,15 @@ def patch_workstream(conn, body, ws_id):
     return 200, db.workstream(conn, ws_id)
 
 
+@route("POST", r"/api/arrange")
+def arrange(conn, body):
+    ids = body.get("ids")
+    if body.get("group") not in db.GROUPS or not isinstance(ids, list):
+        return 400, {"error": f"need group (one of {', '.join(db.GROUPS)}) and ids"}
+    db.arrange(conn, body["group"], ids)
+    return 200, db.summary(conn)
+
+
 @route("POST", r"/api/workstreams/(?P<ws_id>[\w-]+)/approve")
 def approve_workstream(conn, body, ws_id):
     w = db.decide(conn, ws_id, True)
