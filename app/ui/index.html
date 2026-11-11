@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- The template's hash, filled in by build.py; the page sends it with every request so the server can tell it's stale. -->
+<meta name="wsa-version" content="__VERSION__">
+<title>Workstreams</title>
+</head>
+<body>
+<div id="root"></div>
+<!-- A data snapshot, filled in by build.py, shown when the API can't be reached. -->
+<script id="snapshot" type="application/json">__SNAPSHOT__</script>
+<script type="module" src="/src/main.tsx"></script>
+</body>
+</html>

@@ -8,6 +8,17 @@ New entries go under **Unreleased** in the pull request that makes the change (s
 
 ## Unreleased
 
+### Prioritise workstreams: drag them between lanes, focus on some today
+
+- Every workstream has a priority: High, Normal (the default) or Low. The dashboard is four lanes stacked top to bottom: **Focus today**, **High**, **Normal** and **Low**.
+- Each row has a handle (⠿): drag it to another lane to change the priority or put it in Focus today, or within a lane to put it in your own order. The order is kept. Keyboard works too: focus a handle, Space, arrow keys, Space.
+- Empty lanes stay visible so you can drop into them. Low is collapsed until you open it, says how many in it need you, and opens by itself while you drag.
+- **☆ Today** on a row puts it in Focus today; that lapses on its own the next day. A workstream's page has the Today toggle and a High / Normal / Low picker.
+- Tell the agent in chat ("W7 is low") and it records that as your choice. The agent may set a priority itself when it's clear, marked "set by agent" with its reason on hover, but never changes one you chose.
+- Under the hood, the page is now a TypeScript + React app in `app/ui/`, styled with Tailwind CSS, with tests (`npm run check`) and a dev server against the live API (`npm run dev`). `app/app.template.html` is built from it and still committed, so publishing needs no Node and `build.py` works as before.
+
+**After updating:** republish the app (`app/README.md`, Publishing). The database gains the `priority`, `priority_by`, `priority_why`, `focus_on` and `rank` columns on the next `db.connect()`, and the API server must be restarted to serve `/api/arrange` (`rc-service --user wsa-api restart`).
+
 ### The API server starts at every boot
 
 - The kit now declares the API server as a startup item, `wsa-api`: an openrc user service that starts `app/server.py` at every boot and restarts it when it exits, so the app is live after a restart without waiting for the next sweep. It shows as a Login item.

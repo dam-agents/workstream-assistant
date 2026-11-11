@@ -33,6 +33,11 @@ CREATE TABLE IF NOT EXISTS workstreams (
   reject_reason TEXT NOT NULL DEFAULT '',
   decided_at    TEXT NOT NULL DEFAULT '',
   archived      INTEGER NOT NULL DEFAULT 0,
+  priority      TEXT NOT NULL DEFAULT 'normal' CHECK (priority IN ('high','normal','low')),
+  priority_by   TEXT NOT NULL DEFAULT '',      -- 'owner' or 'agent'; the agent never overrides the owner's choice
+  priority_why  TEXT NOT NULL DEFAULT '',      -- one line, when the agent set it
+  focus_on      TEXT NOT NULL DEFAULT '',      -- YYYY-MM-DD the owner focuses on it; only today's counts
+  rank          INTEGER,                       -- the owner's order within its dashboard group (drag & drop); NULL = not placed
   created_at    TEXT NOT NULL,
   updated_at    TEXT NOT NULL
 );
@@ -186,6 +191,7 @@ def connect():
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     conn.execute("PRAGMA journal_mode = WAL")
+    _migrate_priority(conn)
     conn.executescript(SCHEMA)
     _migrate_to_sources(conn)
     _assign_refs(conn)
@@ -194,6 +200,19 @@ def connect():
 
 def _cols(conn, table):
     return {r["name"] for r in conn.execute(f"PRAGMA table_info({table})")}
+
+
+def _migrate_priority(conn):
+    """Add the priority columns to a workstreams table written before priorities existed."""
+    have = _cols(conn, "workstreams")
+    if not have:
+        return
+    for col, ddl in (("priority", "TEXT NOT NULL DEFAULT 'normal' CHECK (priority IN ('high','normal','low'))"),
+                     ("priority_by", "TEXT NOT NULL DEFAULT ''"), ("priority_why", "TEXT NOT NULL DEFAULT ''"),
+                     ("focus_on", "TEXT NOT NULL DEFAULT ''"), ("rank", "INTEGER")):
+        if col not in have:
+            conn.execute(f"ALTER TABLE workstreams ADD COLUMN {col} {ddl}")
+    conn.commit()
 
 
 def _migrate_to_sources(conn):
@@ -314,7 +333,8 @@ def summary(conn):
     snapshot(conn)
     tracked = rows(conn.execute("SELECT * FROM workstreams WHERE archived = 0 AND state = 'approved' ORDER BY name"))
     suggested = rows(conn.execute(
-        "SELECT id, ref, name, owner, goal, tldr, status, created_at FROM workstreams WHERE state = 'suggested' ORDER BY created_at"))
+        """SELECT id, ref, name, owner, goal, tldr, status, priority, priority_by, priority_why, focus_on, rank, created_at
+           FROM workstreams WHERE state = 'suggested' ORDER BY created_at"""))
     stale_before = (datetime.now(TZ) - timedelta(days=STALE_DAYS)).isoformat()
     open_asks = {r["workstream_id"]: r["n"] for r in conn.execute(
         "SELECT workstream_id, COUNT(*) AS n FROM asks WHERE done_at IS NULL GROUP BY workstream_id")}
@@ -326,6 +346,10 @@ def summary(conn):
     for w in tracked + suggested:
         w["asks_open"] = open_asks.get(w["id"], 0) + my_followups.get(w["id"], 0)  # everything that needs the owner
         w["followups_open"] = open_followups.get(w["id"], 0)
+    for w in tracked + suggested:
+        w["focus"] = w.get("focus_on") == today()
+        if w.get("focus_on") and not w["focus"]:
+            w["rank"] = None  # its place was in an earlier day's focus, not in its priority group
     for w in tracked:
         w["counts"] = _counts(conn, w["id"])
         last = conn.execute("SELECT MAX(ts) AS ts FROM progress WHERE workstream_id = ?", (w["id"],)).fetchone()["ts"]
@@ -347,6 +371,7 @@ def workstream(conn, ws_id):
     if not w:
         return None
     w = dict(w)
+    w["focus"] = w["focus_on"] == today()
     w["counts"] = _counts(conn, ws_id)
     w["items"] = rows(conn.execute(
         "SELECT * FROM items WHERE workstream_id = ? ORDER BY kind, (owner = ?) DESC, owner, id", (ws_id, ME)))
@@ -420,6 +445,62 @@ def update_workstream(conn, ws_id, fields):
         fields["epic_label"] = epic_label_for(url, fields.get("epic_label", cur["epic_label"] if cur else None))
     fields["updated_at"] = now()
     conn.execute(f"UPDATE workstreams SET {', '.join(f'{k} = ?' for k in fields)} WHERE id = ?", (*fields.values(), ws_id))
+    conn.commit()
+
+
+PRIORITIES = ("high", "normal", "low")
+
+
+def today():
+    return datetime.now(TZ).date().isoformat()
+
+
+def set_priority(conn, ws_id, priority, by="agent", why=""):
+    """Set a workstream's priority: 'high', 'normal' or 'low'. by='owner' when the owner chose it (in the app,
+    or by telling me in chat). The agent's choice never replaces the owner's: it returns False and changes nothing."""
+    if priority not in PRIORITIES:
+        raise ValueError(f"priority must be one of {PRIORITIES}, not {priority!r}")
+    ws_id = resolve_workstream(conn, ws_id) or ws_id
+    cur = conn.execute("SELECT priority_by FROM workstreams WHERE id = ?", (ws_id,)).fetchone()
+    if not cur:
+        return None
+    if by != "owner" and cur["priority_by"] == "owner":
+        print(f"note: the owner set the priority of {ws_id}; not changing it", file=sys.stderr)
+        return False
+    # A new group places it at the end of that group; the same group keeps its place.
+    conn.execute("""UPDATE workstreams SET rank = CASE WHEN priority = ? THEN rank END, priority = ?,
+                      priority_by = ?, priority_why = ?, updated_at = ? WHERE id = ?""",
+                 (priority, priority, "owner" if by == "owner" else "agent", "" if by == "owner" else why, now(), ws_id))
+    conn.commit()
+    return True
+
+
+GROUPS = ("focus",) + PRIORITIES
+
+
+def arrange(conn, group, ids):
+    """The owner dragged workstreams into this order in one dashboard group: 'focus' (today's focus) or a priority.
+    Each one in ids gets that group and its position. A priority changed this way is the owner's choice."""
+    if group not in GROUPS:
+        raise ValueError(f"group must be one of {GROUPS}, not {group!r}")
+    ts, day = now(), today()
+    for i, ws_id in enumerate(ids):
+        ws_id = resolve_workstream(conn, ws_id) or ws_id
+        if group == "focus":
+            conn.execute("UPDATE workstreams SET focus_on = ?, rank = ?, updated_at = ? WHERE id = ?", (day, i, ts, ws_id))
+        else:
+            conn.execute("""UPDATE workstreams SET focus_on = '', rank = ?, updated_at = ?,
+                              priority_by = CASE WHEN priority = ? THEN priority_by ELSE 'owner' END,
+                              priority_why = CASE WHEN priority = ? THEN priority_why ELSE '' END,
+                              priority = ? WHERE id = ?""", (i, ts, group, group, group, ws_id))
+    conn.commit()
+
+
+def set_focus(conn, ws_id, on=True):
+    """Mark a workstream as the owner's focus for today. It drops back on its own tomorrow."""
+    ws_id = resolve_workstream(conn, ws_id) or ws_id
+    conn.execute("UPDATE workstreams SET focus_on = ?, updated_at = ? WHERE id = ?", (today() if on else "", now(), ws_id))
+    conn.execute("UPDATE workstreams SET rank = NULL WHERE id = ?", (ws_id,))  # placed at the end of its new group
     conn.commit()
 
 

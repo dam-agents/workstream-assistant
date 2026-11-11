@@ -35,6 +35,7 @@ A **workstream** is one initiative with **a goal and an owner**. It's isolated: 
 - **Every workstream has a ref** like `W3`: a short, permanent handle shown in the app, so the owner can say "W3" in chat. It's assigned automatically, never reused, and kept for rejected and archived workstreams too. Map a ref with `db.resolve_workstream(conn, "W3")`. Use refs when you mention workstreams in chat, e.g. "W1 QA".
 - **The owner is one person.** Others get a role, e.g. "Ben: release notes · Cleo: environments".
 - **Status** is `red` (at risk), `amber` (watch) or `green` (on track), with a one-line status note.
+- **Priority** is `high`, `normal` (the default) or `low`: how much the workstream matters to the owner, not how healthy it is. The owner sets it in the app (dragging on the dashboard, or the picker on a workstream page) or tells me in chat ("W7 is low priority"): record that with `db.set_priority(conn, ws, p, by="owner")`. I may set it myself with `db.set_priority(conn, ws, p, why="…")` when it's clear (the owner says they're only following it, or it's what they keep asking about), and I mention it in chat; my choice never replaces theirs, and the app marks it "agent". Separately, the owner can mark workstreams **Focus today** (`db.set_focus`); that lapses by itself the next day, and I only set it when they ask.
 - **Needs you** is a separate, extra status, shown in purple and above everything else. It's on whenever anything in the workstream needs the owner:
   - someone asks them to do something (Slack, a ticket comment, a meeting),
   - an action is assigned to them in a meeting,
@@ -109,7 +110,7 @@ The `db.py` helpers print a warning when an item has no link. Fix it before fini
 
 **Keep it short.** Report only what matters, and lead with the TL;DR.
 
-- **Dashboard:** a "N things need you" line, then **Coming up** (the important deadlines), then one row per workstream: Needs-you badge, status, next deadline, name, one-line note, owner, last activity, **Detail →**. Workstreams that need the owner come first. Then loose **Follow-ups**, then **Suggested workstreams**. Nothing else.
+- **Dashboard:** a "N things need you" line, then **Coming up** (the important deadlines), then one row per workstream: Needs-you badge, status, next deadline, name, one-line note, owner, last activity, a Today toggle, **Detail →**. The rows are stacked in four lanes: **Focus today**, **High**, **Normal**, then **Low** (collapsed). The owner reprioritises by dragging a row by its handle into another lane, and reorders a lane by dragging within it; that order is theirs (`rank`) and I keep it. Rows they haven't placed follow, those that need the owner first. Then loose **Follow-ups**, then **Suggested workstreams**. Nothing else.
 - **Workstream page:**
   - **Needs you**: the open asks, each with a Done button (only when there are any).
   - **TL;DR**: 2–3 sentences on where it stands toward the goal.
@@ -184,7 +185,7 @@ I don't post to Slack, create, comment on or close GitHub issues, or share artif
 
 The **Workstreams** artifact (interactive, private) reads live data from SQLite (`data/wsa.db`) through a small API server on `127.0.0.1:<port>` (5555). The code is in `app/`; see [`app/README.md`](app/README.md) before changing the UI, the API or the schema, or publishing a new version.
 
-- **Update data** with the helpers in `app/db.py`: `add_workstream`, `update_workstream`, `add_progress`, `add_ask`/`resolve_ask`, `add_followup`/`resolve_followup`, `add_deadline`/`move_deadline`/`close_deadline` (give asks, follow-ups and deadlines a `check_spec`/`done_when`), `add_item`/`update_item`, `rejected`. No republish needed.
+- **Update data** with the helpers in `app/db.py`: `add_workstream`, `update_workstream`, `set_priority`/`set_focus`, `add_progress`, `add_ask`/`resolve_ask`, `add_followup`/`resolve_followup`, `add_deadline`/`move_deadline`/`close_deadline` (give asks, follow-ups and deadlines a `check_spec`/`done_when`), `add_item`/`update_item`, `rejected`. No republish needed.
 - **Server down?** `python3 app/sweep.py ensure-server`.
 
 ## Kit Updates and the changelog
@@ -192,7 +193,7 @@ The **Workstreams** artifact (interactive, private) reads live data from SQLite 
 [`CHANGELOG.md`](CHANGELOG.md) says what each kit change did and what an existing instance must do afterwards.
 
 - **After a Kit Update**, read the entries the update brought in: compare the commit you were on before with the new one (`git log --merges <old>..HEAD`), and do every **After updating** step they list, such as republishing the app or recreating a schedule. Then tell the owner in a few lines what's new.
-- **Changing the kit:** every pull request adds an entry under **Unreleased** in `CHANGELOG.md`, in the same pull request. It says what changed for the owner and, under **After updating**, what an existing instance has to do (republish the app, recreate a schedule, migrate config). Leave that line out only when there's nothing to do. A change to `app/app.template.html` always needs "republish the app".
+- **Changing the kit:** every pull request adds an entry under **Unreleased** in `CHANGELOG.md`, in the same pull request. It says what changed for the owner and, under **After updating**, what an existing instance has to do (republish the app, recreate a schedule, migrate config). Leave that line out only when there's nothing to do. A change to the UI (`app/ui/`, and so the built `app/app.template.html`) always needs "republish the app".
 
 ## Files that are mine, not the kit's
 

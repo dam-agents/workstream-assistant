@@ -1,0 +1,84 @@
+@import 'tailwindcss';
+
+/* Design tokens. Components use them as Tailwind utilities (bg-surface, text-muted, border-line, text-red, bg-red-soft…);
+   the dark palette swaps the variables, so no component needs a dark: variant. */
+@theme {
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --color-page: var(--wsa-bg);
+  --color-surface: var(--wsa-surface);
+  --color-raise: var(--wsa-raise);
+  --color-line: var(--wsa-border);
+  --color-ink: var(--wsa-text);
+  --color-muted: var(--wsa-muted);
+
+  --color-red: var(--wsa-red);
+  --color-red-soft: var(--wsa-red-bg);
+  --color-amber: var(--wsa-amber);
+  --color-amber-soft: var(--wsa-amber-bg);
+  --color-green: var(--wsa-green);
+  --color-green-soft: var(--wsa-green-bg);
+  --color-blue: var(--wsa-blue);
+  --color-blue-soft: var(--wsa-blue-bg);
+  --color-grey-soft: var(--wsa-grey-bg);
+  --color-needs: var(--wsa-needs);
+  --color-focus: var(--wsa-focus);
+  --color-focus-soft: var(--wsa-focus-bg);
+}
+
+:root {
+  --wsa-bg: #fff;
+  --wsa-surface: #f6f7f9;
+  --wsa-raise: #fff;
+  --wsa-border: #e3e6ea;
+  --wsa-text: #1b1f24;
+  --wsa-muted: #5b6470;
+  --wsa-red: #c62f2f;
+  --wsa-red-bg: #fdecec;
+  --wsa-amber: #a86500;
+  --wsa-amber-bg: #fff4e0;
+  --wsa-green: #1f7a3d;
+  --wsa-green-bg: #e8f5ec;
+  --wsa-blue: #2457c5;
+  --wsa-blue-bg: #e9effc;
+  --wsa-grey-bg: #eef0f3;
+  --wsa-needs: #7c3aed;
+  --wsa-focus: #d97706;
+  --wsa-focus-bg: #fef3c7;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --wsa-bg: #14171b;
+    --wsa-surface: #1c2026;
+    --wsa-raise: #20252c;
+    --wsa-border: #2c323a;
+    --wsa-text: #e6e9ed;
+    --wsa-muted: #9aa3ae;
+    --wsa-red: #ff7b7b;
+    --wsa-red-bg: #3a1c1e;
+    --wsa-amber: #f2b45a;
+    --wsa-amber-bg: #372a14;
+    --wsa-green: #6fd08f;
+    --wsa-green-bg: #16301f;
+    --wsa-blue: #8fb1ff;
+    --wsa-blue-bg: #1b2640;
+    --wsa-grey-bg: #262b32;
+    --wsa-needs: #8b5cf6;
+    --wsa-focus: #f2b45a;
+    --wsa-focus-bg: #3a2c10;
+  }
+}
+
+@layer base {
+  body {
+    @apply m-0 bg-page font-sans text-[14px] leading-normal text-ink;
+  }
+  a {
+    @apply text-blue no-underline hover:underline;
+  }
+  summary::-webkit-details-marker {
+    display: none;
+  }
+}
