@@ -80,3 +80,37 @@ it('falls back to the snapshot without platform', async () => {
   expect(await screen.findByText('Snapshot')).toBeTruthy();
   expect(screen.getByText(/only in the docked preview/)).toBeTruthy();
 });
+
+it('"Work on it" sends the ask, with the owner\'s extra context, into the chat', async () => {
+  const data = summary([ws({ id: 'a', ref: 3, name: 'Release', asks_open: 1 })]);
+  const page = {
+    ...data.workstreams[0],
+    state: 'approved',
+    key_points: '',
+    epic_label: null,
+    epic_url: null,
+    updated_at: data.generated_at,
+    asks: [{ id: 7, workstream_id: 'a', text: 'Post the plan', asked_by: 'Owner (promise)', source: 'Slack #leads', url: 'https://x/p1', ts: data.generated_at }],
+    followups: [],
+    deadlines: [],
+    prebriefs: [],
+    progress: [],
+    notes: [],
+  };
+  mockPlatform(data);
+  (globalThis.platform!.request as ReturnType<typeof vi.fn>).mockImplementation(async (req: Req) => ({
+    status: 200,
+    body: JSON.stringify(req.path.startsWith('/api/workstreams/a') ? page : data),
+  }));
+  await renderApp();
+  fireEvent.click(screen.getByText('Release'));
+  fireEvent.click(await screen.findByText('Work on it'));
+  fireEvent.change(screen.getByPlaceholderText(/Extra context/), { target: { value: 'Draft it in my voice' } });
+  fireEvent.click(screen.getByText('Send to chat'));
+  const sent = (globalThis.platform!.sendPrompt as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+  expect(sent).toMatch(/^Let's work on this ask in W3 \(Release\), ask #7:/);
+  expect(sent).toContain('"Post the plan"');
+  expect(sent).toContain('https://x/p1');
+  expect(sent).toContain('Draft it in my voice');
+  expect(screen.queryByPlaceholderText(/Extra context/)).toBeNull();
+});
