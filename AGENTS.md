@@ -193,7 +193,7 @@ The **Workstreams** artifact (interactive, private) reads live data from SQLite 
 [`CHANGELOG.md`](CHANGELOG.md) says what each kit change did and what an existing instance must do afterwards.
 
 - **After a Kit Update**, read the entries the update brought in: compare the commit you were on before with the new one (`git log --merges <old>..HEAD`), and do every **After updating** step they list, such as republishing the app or recreating a schedule. Then tell the owner in a few lines what's new.
-- **Changing the kit:** every pull request adds an entry under **Unreleased** in `CHANGELOG.md`, in the same pull request. It says what changed for the owner and, under **After updating**, what an existing instance has to do (republish the app, recreate a schedule, migrate config). Leave that line out only when there's nothing to do. A change to `app/app.template.html` always needs "republish the app".
+- **Changing the kit:** every pull request adds an entry under **Unreleased** in `CHANGELOG.md`, in the same pull request. It says what changed for the owner and, under **After updating**, what an existing instance has to do (republish the app, recreate a schedule, migrate config). Leave that line out only when there's nothing to do. A change to the UI (`app/ui/`, and so the built `app/app.template.html`) always needs "republish the app".
 
 ## Files that are mine, not the kit's
 

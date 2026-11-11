@@ -8,6 +8,14 @@ New entries go under **Unreleased** in the pull request that makes the change (s
 
 ## Unreleased
 
+### The app is a TypeScript + React app
+
+- The Workstreams page is rebuilt as a TypeScript + React app in `app/ui/`, styled with Tailwind CSS, instead of one hand-written HTML file. It looks and works the same, priorities included, and keeps the Low priority group open when you come back from a workstream.
+- It has tests now (`npm run check`) and a dev server against the live API (`npm run dev`).
+- `app/app.template.html` is now built from `app/ui` and still committed, so publishing needs no Node: `build.py` works as before.
+
+**After updating:** republish the app (`app/README.md`, Publishing).
+
 ### Prioritise workstreams, and focus on some today
 
 - Every workstream has a priority: High, Normal (the default) or Low. The dashboard stacks workstreams by it: **Focus today**, **High**, **Normal**, then **Low**, collapsed. With nothing prioritised yet, it's the same single list as before.
