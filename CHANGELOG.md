@@ -8,6 +8,14 @@ New entries go under **Unreleased** in the pull request that makes the change (s
 
 ## Unreleased
 
+### Prioritise workstreams, and focus on some today
+
+- Every workstream has a priority: High, Normal (the default) or Low. The dashboard stacks workstreams by it: **Focus today**, **High**, **Normal**, then **Low**, collapsed. With nothing prioritised yet, it's the same single list as before.
+- Set it from the dropdown on each row or on the workstream page, or tell the agent in chat. The agent may set a priority too when it's clear, shown as "agent" with its reason on hover, but never changes one the owner chose.
+- **☆ Today** puts a workstream in **Focus today** at the top. It lapses on its own the next day.
+
+**After updating:** republish the app (`app/README.md`, Publishing). The database gains the new columns on the next `db.connect()`.
+
 ### The API server starts at every boot
 
 - The kit now declares the API server as a startup item, `wsa-api`: an openrc user service that starts `app/server.py` at every boot and restarts it when it exits, so the app is live after a restart without waiting for the next sweep. It shows as a Login item.

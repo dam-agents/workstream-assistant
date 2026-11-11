@@ -35,6 +35,11 @@ def get_workstream(conn, body, ws_id):
 
 @route("PATCH", r"/api/workstreams/(?P<ws_id>[\w-]+)")
 def patch_workstream(conn, body, ws_id):
+    if "priority" in body:  # set from the page, so it's the owner's choice
+        if db.set_priority(conn, ws_id, body["priority"], by="owner") is None:
+            return 404, {"error": "no such workstream"}
+    if "focus" in body:
+        db.set_focus(conn, ws_id, bool(body["focus"]))
     db.update_workstream(conn, ws_id, body)
     return 200, db.workstream(conn, ws_id)
 

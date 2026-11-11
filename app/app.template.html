@@ -148,6 +148,23 @@
   .dl-main { flex:1; min-width:0; }
   .dl .ref[data-ws] { cursor:pointer; }
   @media (max-width:640px) { .dl { flex-wrap:wrap; } .dl-day { width:auto; } }
+  .prio-group { margin-top:18px; }
+  .prio-group > .pg-head { font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin:0 0 6px; display:flex; gap:8px; align-items:baseline; }
+  .prio-group > .pg-head .c { font-weight:400; text-transform:none; letter-spacing:0; }
+  .prio-group .ws-list { margin-top:0; }
+  .prio-group.focus > .pg-head { color:#d97706; }
+  .prio-group.focus .ws-list { border-color:#d97706; }
+  .prio-group.low .ws-row { opacity:.75; }
+  details.prio-group > summary { cursor:pointer; list-style:none; }
+  details.prio-group > summary::-webkit-details-marker { display:none; }
+  details.prio-group > summary::before { content:'▸ '; } details.prio-group[open] > summary::before { content:'▾ '; }
+  .prio-ctl { display:flex; gap:6px; align-items:center; white-space:nowrap; }
+  .prio-ctl select { font:inherit; font-size:12px; border:1px solid var(--border); border-radius:6px; padding:2px 4px; background:var(--raise); color:var(--text); }
+  .prio-ctl .agent-set { font-size:11px; color:var(--muted); }
+  button.focus-btn { padding:2px 8px; font-size:12px; }
+  button.focus-btn.on { background:#fef3c7; border-color:#d97706; color:#92400e; }
+  @media (prefers-color-scheme: dark) { button.focus-btn.on { background:#3a2c10; color:#f2b45a; } }
+  .ws-row { grid-template-columns:130px 1fr auto auto auto; }
 </style>
 </head>
 <body>
@@ -273,7 +290,7 @@ function renderDash(s) {
   $('crumb').textContent = '';
   const list = s.workstreams || [];
   const order = { red: 0, amber: 1, green: 2 };
-  const rows = [...list].sort((a, b) => (b.asks_open > 0) - (a.asks_open > 0) || order[a.status] - order[b.status] || a.name.localeCompare(b.name)).map((a) => `
+  const row = (a) => `
     <div class="ws-row ${a.asks_open ? 'needs' : ''}" data-ws="${esc(a.id)}">
       <div class="ar-status">${a.asks_open ? `<span class="pill p-needs">Needs you · ${a.asks_open}</span>` : ''}${pill(WS_STATUS[a.status])}${nextDue(a.next_deadline)}</div>
       <div class="ar-main">
@@ -281,8 +298,24 @@ function renderDash(s) {
         <div class="ar-note">${esc(a.status_note)}</div>
       </div>
       <div class="ar-meta">${esc(a.owner)} · ${esc(ago(a.last_activity))}${a.followups_open ? ` · ${a.followups_open} follow-up${a.followups_open > 1 ? 's' : ''}` : ''}</div>
+      ${prioCtl(a)}
       <a href="#" class="ar-open">Detail →</a>
-    </div>`).join('');
+    </div>`;
+  const sorted = [...list].sort((a, b) => (b.asks_open > 0) - (a.asks_open > 0) || order[a.status] - order[b.status] || a.name.localeCompare(b.name));
+  const groups = [
+    ['focus', 'Focus today', sorted.filter((a) => a.focus)],
+    ['high', 'High priority', sorted.filter((a) => !a.focus && a.priority === 'high')],
+    ['normal', 'Normal', sorted.filter((a) => !a.focus && (a.priority || 'normal') === 'normal')],
+    ['low', 'Low priority', sorted.filter((a) => !a.focus && a.priority === 'low')],
+  ].filter((g) => g[2].length);
+  const single = groups.length === 1 && groups[0][0] === 'normal';  // nothing prioritised yet: one plain list
+  const rows = single ? `<div class="ws-list">${groups[0][2].map(row).join('')}</div>` : groups.map(([key, title, ws]) => {
+    const head = `<span>${title}</span><span class="c">${ws.length}${key === 'low' && ws.some((a) => a.asks_open) ? ' · ' + ws.filter((a) => a.asks_open).length + ' need you' : ''}</span>`;
+    const body = `<div class="ws-list">${ws.map(row).join('')}</div>`;
+    return key === 'low'
+      ? `<details class="prio-group low"${route.lowOpen ? ' open' : ''}><summary class="pg-head">${head}</summary>${body}</details>`
+      : `<div class="prio-group ${key}"><div class="pg-head">${head}</div>${body}</div>`;
+  }).join('');
   const sugg = (s.suggested || []).map((a) => `
     <div class="sg" data-sid="${esc(a.id)}">
       <div class="sg-main">
@@ -322,14 +355,41 @@ function renderDash(s) {
     <div class="sm-list">${dlShown.map((d) => deadlineRow(d, true)).join('')}</div>` : '';
   $('view').innerHTML = needLine + comingUp +
     (debs ? `<h2>Debriefs <span class="c">${s.debriefs.length} meeting${s.debriefs.length > 1 ? 's' : ''} to talk through</span></h2><div class="db-list">${debs}</div>` : '') +
-    (rows ? `<div class="ws-list">${rows}</div>` : '<div class="empty">No workstreams yet. Ask the agent to suggest some.</div>') +
+    (rows || '<div class="empty">No workstreams yet. Ask the agent to suggest some.</div>') +
     `<h2>Follow-ups <span class="c">${loose.length ? loose.length + ' not tied to a workstream' : 'none outside workstreams'}</span></h2>` +
     (loose.length ? `<div class="sm-list">${loose.map(followupRow).join('')}</div>` : '<div class="empty" style="padding:4px 0">Quick open loops you start on Slack or in meetings show up here. Ones that belong to a workstream are shown in that workstream.</div>') +
     (sugg ? `<h2>Suggested workstreams <span class="c">${s.suggested.length} waiting for your approval</span></h2><div class="sg-list">${sugg}</div>` : '');
   bindSuggestions();
   bindDebriefs();
   bindFollowups();
+  bindPriority();
   bindWorkstreamLinks();
+  const low = document.querySelector('details.prio-group.low');
+  if (low) low.ontoggle = () => { route.lowOpen = low.open; };
+}
+
+const PRIO = { high: 'High', normal: 'Normal', low: 'Low' };
+function prioCtl(a) {
+  if (!live) return `<div class="prio-ctl">${a.focus ? '<span class="pill p-amber">Focus today</span>' : ''}${a.priority && a.priority !== 'normal' ? pill([PRIO[a.priority], 'p-grey']) : ''}</div>`;
+  const p = a.priority || 'normal';
+  const agentNote = a.priority_by === 'agent' ? `<span class="agent-set" title="${esc(a.priority_why || 'Set by the agent')}">agent</span>` : '';
+  return `<div class="prio-ctl" data-prio-ws="${esc(a.id)}">
+    <button class="focus-btn ${a.focus ? 'on' : ''}" data-focus="${a.focus ? 0 : 1}" title="${a.focus ? 'Remove from today\'s focus' : 'Focus on this today (resets tomorrow)'}">${a.focus ? '★ Today' : '☆ Today'}</button>
+    <select data-prio title="Priority">${Object.entries(PRIO).map(([k, l]) => `<option value="${k}"${k === p ? ' selected' : ''}>${l}</option>`).join('')}</select>${agentNote}</div>`;
+}
+
+function bindPriority() {
+  const save = async (el, body) => {
+    const ws = el.closest('[data-prio-ws]').dataset.prioWs;
+    el.disabled = true;
+    try { await api('PATCH', `/api/workstreams/${ws}`, body); await load(); }
+    catch (e) { showBanner('err', `Couldn't save: ${esc(e.message)}`); el.disabled = false; }
+  };
+  document.querySelectorAll('[data-prio-ws]').forEach((c) => {
+    c.addEventListener('click', (ev) => ev.stopPropagation());  // don't open the workstream
+    c.querySelector('[data-focus]').onclick = (ev) => save(ev.currentTarget, { focus: ev.currentTarget.dataset.focus === '1' });
+    c.querySelector('[data-prio]').onchange = (ev) => save(ev.currentTarget, { priority: ev.currentTarget.value });
+  });
 }
 
 function bindDebriefs() {
@@ -374,7 +434,7 @@ function bindSuggestions() {
 
 function bindWorkstreamLinks() {
   document.querySelectorAll('[data-ws]').forEach((el) => el.addEventListener('click', (ev) => {
-    if (ev.target.closest('a[href^="http"]')) return;
+    if (ev.target.closest('a[href^="http"], [data-prio-ws]')) return;
     ev.preventDefault(); go({ view: 'ws', id: el.dataset.ws });
   }));
 }
@@ -458,7 +518,7 @@ function renderWorkstream(a) {
       <button id="dReject" ${live ? '' : 'disabled'}>Reject</button></div>` : '';
   $('view').innerHTML = draft + `
     <div class="ad-head">
-      <div class="ad-title">${refTag(a)}${esc(a.name)} ${pill(WS_STATUS[a.status])}</div>
+      <div class="ad-title">${refTag(a)}${esc(a.name)} ${pill(WS_STATUS[a.status])}${a.state === 'approved' ? `<span style="margin-left:auto">${prioCtl(a)}</span>` : ''}</div>
       <div class="muted">${esc(a.owner)}${a.epic_url ? ` · ${link((a.epic_label || 'Link').split(' ')[0], a.epic_url)}` : ''} · updated ${esc(ago(a.updated_at))}</div>
     </div>
     ${(a.asks || []).length ? `<div class="needs-box"><div class="lbl">Needs you · ${a.asks.length}</div>
@@ -479,6 +539,7 @@ function renderWorkstream(a) {
       ${decisions ? `<ul>${decisions}</ul>` : ''}
     </details>`;
   bindFollowups();
+  bindPriority();
   bindPrebriefs(a);
   document.querySelectorAll('.ask-done[data-ask]').forEach((b) => b.onclick = async () => {
     b.disabled = true;
