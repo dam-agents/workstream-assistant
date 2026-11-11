@@ -8,30 +8,16 @@ New entries go under **Unreleased** in the pull request that makes the change (s
 
 ## Unreleased
 
-### Drag workstreams between priority lanes
+### Prioritise workstreams: drag them between lanes, focus on some today
 
-- The dashboard is four lanes stacked top to bottom: **Focus today**, **High**, **Normal** and **Low**. Each row has a handle (⠿): drag it to another lane to change the priority, or to Focus today, or within a lane to put it in your own order. The order is kept.
-- Empty lanes stay visible so you can drop into them. Low stays collapsed until you open it, and opens by itself while you drag.
-- The priority dropdown is gone from the dashboard. A workstream's page has a High / Normal / Low picker instead, and each row keeps its **☆ Today** toggle.
-- Keyboard works too: focus a handle, press Space, move with the arrow keys, Space again to drop.
+- Every workstream has a priority: High, Normal (the default) or Low. The dashboard is four lanes stacked top to bottom: **Focus today**, **High**, **Normal** and **Low**.
+- Each row has a handle (⠿): drag it to another lane to change the priority or put it in Focus today, or within a lane to put it in your own order. The order is kept. Keyboard works too: focus a handle, Space, arrow keys, Space.
+- Empty lanes stay visible so you can drop into them. Low is collapsed until you open it, says how many in it need you, and opens by itself while you drag.
+- **☆ Today** on a row puts it in Focus today; that lapses on its own the next day. A workstream's page has the Today toggle and a High / Normal / Low picker.
+- Tell the agent in chat ("W7 is low") and it records that as your choice. The agent may set a priority itself when it's clear, marked "set by agent" with its reason on hover, but never changes one you chose.
+- Under the hood, the page is now a TypeScript + React app in `app/ui/`, styled with Tailwind CSS, with tests (`npm run check`) and a dev server against the live API (`npm run dev`). `app/app.template.html` is built from it and still committed, so publishing needs no Node and `build.py` works as before.
 
-**After updating:** republish the app (`app/README.md`, Publishing). The database gains a `rank` column on the next `db.connect()`.
-
-### The app is a TypeScript + React app
-
-- The Workstreams page is rebuilt as a TypeScript + React app in `app/ui/`, styled with Tailwind CSS, instead of one hand-written HTML file. It looks and works the same, priorities included, and keeps the Low priority group open when you come back from a workstream.
-- It has tests now (`npm run check`) and a dev server against the live API (`npm run dev`).
-- `app/app.template.html` is now built from `app/ui` and still committed, so publishing needs no Node: `build.py` works as before.
-
-**After updating:** republish the app (`app/README.md`, Publishing).
-
-### Prioritise workstreams, and focus on some today
-
-- Every workstream has a priority: High, Normal (the default) or Low. The dashboard stacks workstreams by it: **Focus today**, **High**, **Normal**, then **Low**, collapsed. With nothing prioritised yet, it's the same single list as before.
-- Set it from the dropdown on each row or on the workstream page, or tell the agent in chat. The agent may set a priority too when it's clear, shown as "agent" with its reason on hover, but never changes one the owner chose.
-- **☆ Today** puts a workstream in **Focus today** at the top. It lapses on its own the next day.
-
-**After updating:** republish the app (`app/README.md`, Publishing). The database gains the new columns on the next `db.connect()`.
+**After updating:** republish the app (`app/README.md`, Publishing). The database gains the `priority`, `priority_by`, `priority_why`, `focus_on` and `rank` columns on the next `db.connect()`, and the API server must be restarted to serve `/api/arrange` (`rc-service --user wsa-api restart`).
 
 ### The API server starts at every boot
 
