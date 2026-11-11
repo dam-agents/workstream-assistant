@@ -1,6 +1,7 @@
 // One workstream: what needs the owner, TL;DR, deadlines, key points, follow-ups, prebriefs, progress.
 import { api } from '../../api/client';
-import type { Workstream } from '../../api/types';
+import { useState } from 'react';
+import type { Ask, Workstream } from '../../api/types';
 import { PriorityControl } from '../../components/PriorityControl';
 import { DeadlineRow, FollowupRow, PrebriefRow } from '../../components/Rows';
 import { Button, ExtLink, ItemText, Linkified, Meta, RefTag, RowList, SectionTitle, StatusPill } from '../../components/ui';
@@ -28,31 +29,88 @@ function SuggestedBanner({ ws }: { ws: Workstream }) {
   );
 }
 
-function Asks({ ws }: { ws: Workstream }) {
+/** The prompt "Work on it" sends: the ask with everything the agent needs to pick it up, and the owner's own words. */
+export function askPrompt(ws: Workstream, a: Ask, extra: string): string {
+  const lines = [
+    `Let's work on this ask in ${wsRef(ws)} (${ws.name}), ask #${a.id}:`,
+    `"${a.text}"`,
+    `Asked by ${a.asked_by}${a.source ? ` · ${a.source}` : ''}${a.url ? ` · ${a.url}` : ''}.`,
+  ];
+  if (extra.trim()) lines.push('', extra.trim());
+  lines.push('', `Read the workstream and the source first, then help me get it done. Don't post or share anything without my go-ahead. When it's done, resolve the ask (db.resolve_ask).`);
+  return lines.join('\n');
+}
+
+function AskRow({ ws, a }: { ws: Workstream; a: Ask }) {
   const { live } = useApp();
   const { busy, run } = useAction();
+  const prompt = usePrompt();
+  const [working, setWorking] = useState(false);
+  const [extra, setExtra] = useState('');
+  const send = () => {
+    if (prompt(askPrompt(ws, a, extra))) {
+      setWorking(false);
+      setExtra('');
+    }
+  };
+  return (
+    <div className="py-[7px]">
+      <div className="flex items-center gap-3">
+        <div className="flex-1">
+          <div>
+            <ItemText text={a.text} url={a.url} />
+          </div>
+          <Meta>
+            {a.asked_by}
+            {a.source && ` · ${a.source}`} · {ago(a.ts)}
+          </Meta>
+        </div>
+        {live && (
+          <>
+            <Button disabled={working} onClick={() => setWorking(true)}>
+              Work on it
+            </Button>
+            <Button disabled={busy} onClick={() => run(() => api.askDone(a.id))}>
+              Done
+            </Button>
+          </>
+        )}
+      </div>
+      {working && (
+        // No <form>: the artifact frame blocks submits. Cmd/Ctrl+Enter sends, Escape cancels.
+        <div className="mt-2 flex flex-col gap-2">
+          <textarea
+            autoFocus
+            rows={3}
+            value={extra}
+            onChange={(e) => setExtra(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) (e.preventDefault(), send());
+              if (e.key === 'Escape') setWorking(false);
+            }}
+            placeholder="Extra context for the chat (optional): what you want to do, what you already know…"
+            className="w-full rounded-md border border-line bg-raise px-2 py-[5px] font-[inherit] text-[13px] text-ink"
+          />
+          <div className="flex justify-end gap-2">
+            <Button onClick={() => setWorking(false)}>Cancel</Button>
+            <Button variant="primary" onClick={send}>
+              Send to chat
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Asks({ ws }: { ws: Workstream }) {
   if (!ws.asks.length) return null;
   return (
     <div className="mt-3.5 rounded-lg border border-l-4 border-needs px-4 py-3">
       <div className="mb-1 text-[11px] font-bold tracking-[.06em] text-needs uppercase">Needs you · {ws.asks.length}</div>
       <div className="[&>*+*]:border-t [&>*+*]:border-line">
         {ws.asks.map((a) => (
-          <div key={a.id} className="flex items-center gap-3 py-[7px]">
-            <div className="flex-1">
-              <div>
-                <ItemText text={a.text} url={a.url} />
-              </div>
-              <Meta>
-                {a.asked_by}
-                {a.source && ` · ${a.source}`} · {ago(a.ts)}
-              </Meta>
-            </div>
-            {live && (
-              <Button disabled={busy} onClick={() => run(() => api.askDone(a.id))}>
-                Done
-              </Button>
-            )}
-          </div>
+          <AskRow key={a.id} ws={ws} a={a} />
         ))}
       </div>
     </div>

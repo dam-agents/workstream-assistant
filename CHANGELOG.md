@@ -8,6 +8,12 @@ New entries go under **Unreleased** in the pull request that makes the change (s
 
 ## Unreleased
 
+### "Work on it" on every ask
+
+- Each ask under **Needs you** on a workstream page has a **Work on it** button next to Done. It opens a box for extra context, and **Send to chat** puts the ask into the open chat as "Let's work on this ask in W3 …", with who asked, the source link and your words, so the agent picks it up from there. Cmd/Ctrl+Enter sends, Escape cancels.
+
+**After updating:** republish the app.
+
 ### Prioritise workstreams: drag them between lanes, focus on some today
 
 - Every workstream has a priority: High, Normal (the default) or Low. The dashboard is four lanes stacked top to bottom: **Focus today**, **High**, **Normal** and **Low**.
