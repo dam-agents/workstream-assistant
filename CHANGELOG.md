@@ -8,6 +8,10 @@ New entries go under **Unreleased** in the pull request that makes the change (s
 
 ## Unreleased
 
+### Chat names things by title, not by ref
+
+- In chat, debriefs and sweep summaries, the agent now names workstreams, asks and follow-ups by a short title that says what they are ("Real-user acceptance tests", "Tell Matouš who takes the M365 security work"), not "W1" or "ask 78" alone. The ref may follow in parentheses; you can still say "W3" yourself.
+
 ### "Work on it" on every ask
 
 - Each ask under **Needs you** on a workstream page has a **Work on it** button next to Done. It opens a box for extra context, and **Send to chat** puts the ask into the open chat as "Let's work on this ask in W3 …", with who asked, the source link and your words, so the agent picks it up from there. Cmd/Ctrl+Enter sends, Escape cancels.

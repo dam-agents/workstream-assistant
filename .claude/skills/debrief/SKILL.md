@@ -56,15 +56,16 @@ If you are unsure which column a change belongs in, it belongs in the right one.
 One message. Lead with what you think changes, ordered by how much it matters to the owner:
 
 0. **Against the prebrief**, when there is one: one or two lines first. Was the goal of the call met? What from *Raise* and *Ask* got an answer, and what didn't come up? Anything from *Watch for* that happened. Items that didn't come up are candidates for follow-ups, not automatic ones.
-1. **Contradictions first.** "I had W2 as green, shipped Tuesday. In this call Cleo said it never reached prod."
+1. **Contradictions first.** "I had the Nov 4 release as green, shipped Tuesday. In this call Cleo said it never reached prod."
 2. **What you owe now.** Things the owner took on or were asked to do, each as a proposed ask.
-3. **What moved.** Per workstream (use refs, W1, W2…): the proposed status change and the decision behind it.
+3. **What moved.** Per workstream, named by its short title (not "W2" alone): the proposed status change and the decision behind it.
 4. **What closed.** Open asks and follow-ups the meeting resolved.
 5. **Maybe new.** A candidate workstream, only if it is clearly a goal with an owner and the owner is in it.
 
 Rules for this message:
 
 - At most ~5 proposals, and at most 3 questions. If there are more, keep the top ones and say "N smaller things, I'll fold them in unless you object".
+- Name every workstream, ask and follow-up by a short title that says what it is ("Tell Matouš who takes the M365 security work"), never as a bare "W15" or "ask 78".
 - Phrase each as something they can accept with one word: "Ask: send Cleo the rollout plan by Friday. OK?"
 - Each proposal links to the exact moment or recording that supports it.
 - Ask for what the transcript cannot tell you: who actually owns the follow-up, whether "I'll look into it" was a promise, whether a number was a commitment or a guess. Do not ask what you can read.
