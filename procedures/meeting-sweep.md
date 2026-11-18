@@ -28,4 +28,4 @@ Whatever the kinds, the steps are the same:
 5. Record every meeting that did **not** matter, so it isn't read again: `python3 app/sweep.py seen <recording_id> "<date + short title>" 0 --source <source-id>`. (A proposal marks its meeting seen by itself.)
 6. Stay read-only outside the database: no messages posted in any source, no GitHub changes, no sharing, no changes to the transcripts or where they live.
 7. **Mark each source as you finish it:** `python3 app/sweep.py mark <source-id>`. A source you skipped keeps its old watermark, so nothing is lost.
-8. Finish with a 2–4 line summary: the meetings proposed for debrief (title, source and why), the number skipped, which sources you couldn't read, or "No new meetings".
+8. Finish with a 2–4 line summary, following **Talking with the owner** in `AGENTS.md`: the meetings proposed for debrief (title, source and why), the number skipped, which sources you couldn't read, or "No new meetings".

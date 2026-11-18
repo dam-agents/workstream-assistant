@@ -42,7 +42,7 @@ Then: `python3 app/prebrief.py new <W3|-> "<title>" --when <ISO> --with "<attend
 
 ### 3. Draft, then iterate
 
-Write the draft to the markdown file `new` printed, and show it in chat. Use this shape, and drop any empty section:
+Write the draft to the markdown file `new` printed, and show it in chat, following **Talking with the owner** in `AGENTS.md` (items by title, not ref). Use this shape, and drop any empty section:
 
 ```markdown
 # Prebrief: <title>

@@ -8,9 +8,12 @@ New entries go under **Unreleased** in the pull request that makes the change (s
 
 ## Unreleased
 
-### Chat names things by title, not by ref
+### One way to talk with the owner, and to write records
 
-- In chat, debriefs and sweep summaries, the agent now names workstreams, asks and follow-ups by a short title that says what they are ("Real-user acceptance tests", "Tell Matouš who takes the M365 security work"), not "W1" or "ask 78" alone. The ref may follow in parentheses; you can still say "W3" yourself.
+- `AGENTS.md` has two new sections that every skill and sweep now follows. **Talking with the owner:** name workstreams and items by what they are ("Tell Matouš who takes the M365 security work"), not "W15" or "ask 78"; lead with what changes; make every proposal answerable in one word; at most ~5 points and 3 questions; say plainly what's uncertain. **Writing records:** an ask's, follow-up's or deadline's text is a short title, with the detail in its next step, done check and link, and it gets rewritten when the item moves on, not appended to.
+- You can still say "W3" yourself.
+
+**After updating:** nothing is required. Existing asks and follow-ups with long texts get shortened when the agent next touches them; ask the agent to tidy them all at once if you prefer.
 
 ### "Work on it" on every ask
 

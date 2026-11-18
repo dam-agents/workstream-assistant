@@ -65,7 +65,7 @@ One message. Lead with what you think changes, ordered by how much it matters to
 Rules for this message:
 
 - At most ~5 proposals, and at most 3 questions. If there are more, keep the top ones and say "N smaller things, I'll fold them in unless you object".
-- Name every workstream, ask and follow-up by a short title that says what it is ("Tell Matouš who takes the M365 security work"), never as a bare "W15" or "ask 78".
+- Follow **Talking with the owner** in `AGENTS.md`: name every workstream and item by its title, never a bare ref.
 - Phrase each as something they can accept with one word: "Ask: send Cleo the rollout plan by Friday. OK?"
 - Each proposal links to the exact moment or recording that supports it.
 - Ask for what the transcript cannot tell you: who actually owns the follow-up, whether "I'll look into it" was a promise, whether a number was a commitment or a guess. Do not ask what you can read.
@@ -84,7 +84,7 @@ Stop when they have nothing more to change. Do not extend the conversation to fe
 
 First the fact: add the `meeting` progress entry to each workstream the owner confirmed it touched. Then use the `app/db.py` helpers:
 
-Name the meeting's source at the start of each `source` field ("Notetaker: weekly sync", "Box transcripts: 2026-10-20 QA call"), so the owner can tell which tool it came from.
+Write each record as **Writing records** in `AGENTS.md` says: the text is a short title, the detail goes in `next_step`, `done_when` and the link. Name the meeting's source at the start of each `source` field ("Notetaker: weekly sync", "Box transcripts: 2026-10-20 QA call"), so the owner can tell which tool it came from.
 
 | Agreed change | Helper |
 |---|---|
