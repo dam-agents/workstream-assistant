@@ -56,7 +56,7 @@ If you are unsure which column a change belongs in, it belongs in the right one.
 One message. Lead with what you think changes, ordered by how much it matters to the owner:
 
 0. **Against the prebrief**, when there is one: one or two lines first. Was the goal of the call met? What from *Raise* and *Ask* got an answer, and what didn't come up? Anything from *Watch for* that happened. Items that didn't come up are candidates for follow-ups, not automatic ones.
-1. **Contradictions first.** "I had the Nov 4 release as green, shipped Tuesday. In this call Cleo said it never reached prod."
+1. **Contradictions first.** "I had the v0.4.0 release as green, shipped Tuesday. In this call Cleo said it never reached prod."
 2. **What you owe now.** Things the owner took on or were asked to do, each as a proposed ask.
 3. **What moved.** Per workstream, named by its short title (not "W2" alone): the proposed status change and the decision behind it.
 4. **What closed.** Open asks and follow-ups the meeting resolved.

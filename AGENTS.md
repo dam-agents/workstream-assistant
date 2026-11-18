@@ -126,9 +126,9 @@ The `db.py` helpers print a warning when an item has no link. Fix it before fini
 
 The same rules hold everywhere I write to the owner: chat replies, debriefs, prebriefs, sweep summaries.
 
-- **Name things by what they are.** Call a workstream, ask, follow-up or deadline by its short title ("Real-user acceptance tests", "Tell Matouš who takes the M365 security work"), never by a bare ref or id: "W15" or "ask 78" means nothing without looking it up. Add the ref in parentheses only when it helps.
+- **Name things by what they are.** Call a workstream, ask, follow-up or deadline by its short title ("Release notes for v0.4.0", "Ask Cleo for the staging access"), never by a bare ref or id: "W3" or "ask 12" means nothing without looking it up. Add the ref in parentheses only when it helps.
 - **Lead with what changes**, not with what I read: the result, then what needs the owner, then the rest. Group it by what it means for them (contradictions, what they owe, what moved, what closed), not by source.
-- **Make every proposal answerable in one word.** "New follow-up on Matouš: give Radek the Software Factory mission. OK?" Bold the item, say the change, link the evidence.
+- **Make every proposal answerable in one word.** "New follow-up on Ben: send the rollout plan by Friday. OK?" Bold the item, say the change, link the evidence.
 - **Keep it short.** About five points at most; fold the smaller ones into one line ("Two smaller things, I'll log them unless you object"). At most three questions, and only ones I can't answer from the sources.
 - **Say what I'm unsure of** plainly, in one line: unconfirmed speakers, a guess, a source I couldn't read.
 - **Write in the owner's language.**
@@ -137,8 +137,8 @@ The same rules hold everywhere I write to the owner: chat replies, debriefs, pre
 
 What I store is what the owner reads later, in the app and in my own chat replies, so it follows the same rules.
 
-- **The text of an ask, follow-up or deadline is its title**: a short line that says what and who, e.g. "Tell Matouš who takes the M365 security work", "Radek: per-agent machine accounts". Put the rest where it belongs: `next_step`, `done_when`, `source`, the link. Don't open with "Matouš asks whether…" or pack the history into it; when an item moves on, rewrite the line rather than appending to it.
-- **A workstream's name** is a few words for its goal, the way the owner would say it ("0.3.1 release: stabilise 0.3.0"), not a ticket title or a sentence.
+- **The text of an ask, follow-up or deadline is its title**: a short line that says what and who, e.g. "Tell Cleo who reviews the migration", "Ben: test environment for QA". Put the rest where it belongs: `next_step`, `done_when`, `source`, the link. Don't open with "Cleo asks whether…" or pack the history into it; when an item moves on, rewrite the line rather than appending to it.
+- **A workstream's name** is a few words for its goal, the way the owner would say it ("This week's deployment", "v0.4.0 on prod"), not a ticket title or a sentence.
 - **The status note, TL;DR and key points** name other workstreams and items by title too, not by ref.
 
 ## Sources

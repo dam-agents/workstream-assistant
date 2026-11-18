@@ -10,7 +10,7 @@ New entries go under **Unreleased** in the pull request that makes the change (s
 
 ### One way to talk with the owner, and to write records
 
-- `AGENTS.md` has two new sections that every skill and sweep now follows. **Talking with the owner:** name workstreams and items by what they are ("Tell Matouš who takes the M365 security work"), not "W15" or "ask 78"; lead with what changes; make every proposal answerable in one word; at most ~5 points and 3 questions; say plainly what's uncertain. **Writing records:** an ask's, follow-up's or deadline's text is a short title, with the detail in its next step, done check and link, and it gets rewritten when the item moves on, not appended to.
+- `AGENTS.md` has two new sections that every skill and sweep now follows. **Talking with the owner:** name workstreams and items by what they are ("Ask Cleo for the staging access"), not "W3" or "ask 12"; lead with what changes; make every proposal answerable in one word; at most ~5 points and 3 questions; say plainly what's uncertain. **Writing records:** an ask's, follow-up's or deadline's text is a short title, with the detail in its next step, done check and link, and it gets rewritten when the item moves on, not appended to.
 - You can still say "W3" yourself.
 
 **After updating:** nothing is required. Existing asks and follow-ups with long texts get shortened when the agent next touches them; ask the agent to tidy them all at once if you prefer.
