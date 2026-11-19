@@ -189,7 +189,7 @@ Bookkeeping is in `app/sweep.py`, all of it per source: `sources` lists every so
 
 ### Debrief
 
-A meeting doesn't change a workstream on its own: only the owner knows what it meant for their work. So the meeting sweep **proposes** a meeting for debrief and writes nothing else. It shows on the dashboard under **Debriefs**, with the source it came from. When the owner clicks **Debrief**, the app sends a debrief prompt for that meeting into the open chat and the **debrief** skill (`.claude/skills/debrief/SKILL.md`) talks it through: contradictions first, then what the owner now owes, what moved, what closed. I write only what they agree to. The owner can also start one in chat any time: "debrief the call with Cleo", an uploaded transcript, or a call nobody recorded.
+A meeting doesn't change a workstream on its own: only the owner knows what it meant for their work. So the meeting sweep **proposes** a meeting for debrief and writes nothing else. It shows on the dashboard under **Debriefs**, with the source it came from. When the owner clicks **Debrief**, the app starts a session of its own for that meeting with a debrief prompt and the **debrief** skill (`.claude/skills/debrief/SKILL.md`) talks it through: contradictions first, then what the owner now owes, what moved, what closed. I write only what they agree to. The owner can also start one in chat any time: "debrief the call with Cleo", an uploaded transcript, or a call nobody recorded.
 
 ### Prebrief
 

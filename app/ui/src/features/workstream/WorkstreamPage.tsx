@@ -1,5 +1,6 @@
 // One workstream: what needs the owner, TL;DR, deadlines, key points, follow-ups, prebriefs, progress.
 import { api } from '../../api/client';
+import { conversationKey } from '../../api/platform';
 import { useState } from 'react';
 import type { Ask, Workstream } from '../../api/types';
 import { PriorityControl } from '../../components/PriorityControl';
@@ -48,7 +49,7 @@ function AskRow({ ws, a }: { ws: Workstream; a: Ask }) {
   const [working, setWorking] = useState(false);
   const [extra, setExtra] = useState('');
   const send = () => {
-    if (prompt(askPrompt(ws, a, extra))) {
+    if (prompt(askPrompt(ws, a, extra), undefined, { conversation: conversationKey('ask', a.id) })) {
       setWorking(false);
       setExtra('');
     }
@@ -88,13 +89,13 @@ function AskRow({ ws, a }: { ws: Workstream; a: Ask }) {
               if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) (e.preventDefault(), send());
               if (e.key === 'Escape') setWorking(false);
             }}
-            placeholder="Extra context for the chat (optional): what you want to do, what you already know…"
+            placeholder="Extra context for the session (optional): what you want to do, what you already know…"
             className="w-full rounded-md border border-line bg-raise px-2 py-[5px] font-[inherit] text-[13px] text-ink"
           />
           <div className="flex justify-end gap-2">
             <Button onClick={() => setWorking(false)}>Cancel</Button>
             <Button variant="primary" onClick={send}>
-              Send to chat
+              Start a session
             </Button>
           </div>
         </div>
@@ -148,7 +149,11 @@ function Prebriefs({ ws }: { ws: Workstream }) {
           <Button
             disabled={!live}
             onClick={() =>
-              prompt(`Prebrief a call for ${ref} (${ws.name}). Follow the prebrief skill, ${SKILL}: ask me which call if you can't tell, then draft it with me.`)
+              prompt(
+                `Prebrief a call for ${ref} (${ws.name}). Follow the prebrief skill, ${SKILL}: ask me which call if you can't tell, then draft it with me.`,
+                undefined,
+                { conversation: conversationKey('prebrief', ws.id, 'new', Date.now()) },
+              )
             }
           >
             Prebrief a call
@@ -166,6 +171,8 @@ function Prebriefs({ ws }: { ws: Workstream }) {
               onOpen={() =>
                 prompt(
                   `Continue prebrief #${p.id} for ${ref}. Follow the prebrief skill, ${SKILL}: \`python3 /home/agent/work/app/prebrief.py show ${p.id}\`, then link me the artifact and show me where it stands.`,
+                  undefined,
+                  { conversation: conversationKey('prebrief', p.id) },
                 )
               }
             />
