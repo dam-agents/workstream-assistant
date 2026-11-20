@@ -106,11 +106,13 @@ it('"Work on it" sends the ask, with the owner\'s extra context, into the chat',
   fireEvent.click(screen.getByText('Release'));
   fireEvent.click(await screen.findByText('Work on it'));
   fireEvent.change(screen.getByPlaceholderText(/Extra context/), { target: { value: 'Draft it in my voice' } });
-  fireEvent.click(screen.getByText('Send to chat'));
+  fireEvent.click(screen.getByText('Start a session'));
   const sent = (globalThis.platform!.sendPrompt as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
   expect(sent).toMatch(/^Let's work on this ask in W3 \(Release\), ask #7:/);
   expect(sent).toContain('"Post the plan"');
   expect(sent).toContain('https://x/p1');
   expect(sent).toContain('Draft it in my voice');
+  // Its own Session, continued when the same ask is sent again.
+  expect((globalThis.platform!.sendPrompt as ReturnType<typeof vi.fn>).mock.calls[0][1]).toEqual({ conversation: 'ask-7' });
   expect(screen.queryByPlaceholderText(/Extra context/)).toBeNull();
 });

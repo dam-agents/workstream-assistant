@@ -8,6 +8,14 @@ New entries go under **Unreleased** in the pull request that makes the change (s
 
 ## Unreleased
 
+### Debrief, Prebrief and Work on it start a session of their own
+
+- **Debrief**, **Prebrief a call**, opening a prebrief and **Work on it** on an ask no longer drop their prompt into whatever chat is open: each starts a new session of its own on the platform, so the conversation about that meeting, call or ask stays apart. Clicking the same one again (Debrief again, the same prebrief, the same ask) continues its session. **Prebrief a call** opens a fresh one each time.
+- **Ask agent to refresh** and **Ask agent to republish** still go into the open chat, and now also work when the page is opened outside it, e.g. from the library.
+- Sessions started this way run unattended: a tool call that needs your permission is refused there.
+
+**After updating:** republish the app.
+
 ### One way to talk with the owner, and to write records
 
 - `AGENTS.md` has two new sections that every skill and sweep now follows. **Talking with the owner:** name workstreams and items by what they are ("Ask Cleo for the staging access"), not "W3" or "ask 12"; lead with what changes; make every proposal answerable in one word; at most ~5 points and 3 questions; say plainly what's uncertain. **Writing records:** an ask's, follow-up's or deadline's text is a short title, with the detail in its next step, done check and link, and it gets rewritten when the item moves on, not appended to.

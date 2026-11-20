@@ -1,23 +1,24 @@
 // Meetings the meeting sweep proposed for a debrief.
 import { api } from '../../api/client';
-import { canPrompt, sendPrompt } from '../../api/platform';
+import { canPrompt, conversationKey, sendPrompt } from '../../api/platform';
 import type { Debrief } from '../../api/types';
 import { Button, ExtLink, Pill, SectionTitle } from '../../components/ui';
 import { ago, fmtDay, plural } from '../../lib/format';
 import { useApp } from '../../state/AppContext';
-import { useAction } from '../../state/useAction';
+import { SENT_TO_SESSION, useAction } from '../../state/useAction';
 
 function DebriefRow({ d }: { d: Debrief }) {
   const { live, notify } = useApp();
   const { busy, run } = useAction();
 
   const start = () => {
-    if (!canPrompt()) return notify('warn', 'The Debrief button works only in the docked preview beside the chat.');
+    if (!canPrompt()) return notify('warn', 'The Debrief button works only on the latest version of this page.');
     void run(
       async () => {
         const started = await api.startDebrief(d.id);
-        sendPrompt(started.prompt);
-        notify('warn', 'Debrief sent to the chat. If nothing arrives, open a chat first (send any message), then click Debrief again.');
+        // Each meeting gets a Session of its own; "Debrief again" continues it.
+        sendPrompt(started.prompt, { conversation: conversationKey('debrief', d.id) });
+        notify('warn', `Debrief: ${SENT_TO_SESSION}`);
       },
       { reloadAfter: false, failure: "Couldn't start the debrief" },
     );
