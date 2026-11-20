@@ -1,84 +1,222 @@
 @import 'tailwindcss';
 
-/* Design tokens. Components use them as Tailwind utilities (bg-surface, text-muted, border-line, text-red, bg-red-soft…);
-   the dark palette swaps the variables, so no component needs a dark: variant. */
+/* Design tokens. Components use them as Tailwind utilities (bg-raise, text-muted, border-line, text-red, bg-red-soft…);
+   the dark palette swaps the variables, so no component needs a dark: variant. A calm, system-native look: quiet
+   neutral surfaces, one accent blue, status colours only for state. */
 @theme {
-  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Inter, 'Helvetica Neue', Arial, sans-serif;
+  --font-display: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Inter, 'Helvetica Neue', Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
 
   --color-page: var(--wsa-bg);
-  --color-surface: var(--wsa-surface);
   --color-raise: var(--wsa-raise);
-  --color-line: var(--wsa-border);
+  --color-side: var(--wsa-side);
+  --color-fill: var(--wsa-fill);
+  --color-fill2: var(--wsa-fill2);
+  --color-thumb: var(--wsa-thumb);
+  --color-line: var(--wsa-sep);
+  --color-line-strong: var(--wsa-sep-strong);
   --color-ink: var(--wsa-text);
   --color-muted: var(--wsa-muted);
+  --color-faint: var(--wsa-faint);
 
-  --color-red: var(--wsa-red);
-  --color-red-soft: var(--wsa-red-bg);
-  --color-amber: var(--wsa-amber);
-  --color-amber-soft: var(--wsa-amber-bg);
-  --color-green: var(--wsa-green);
-  --color-green-soft: var(--wsa-green-bg);
   --color-blue: var(--wsa-blue);
   --color-blue-soft: var(--wsa-blue-bg);
+  --color-red: var(--wsa-red);
+  --color-red-dot: var(--wsa-red-dot);
+  --color-red-soft: var(--wsa-red-bg);
+  --color-amber: var(--wsa-amber);
+  --color-amber-dot: var(--wsa-amber-dot);
+  --color-amber-soft: var(--wsa-amber-bg);
+  --color-green: var(--wsa-green);
+  --color-green-dot: var(--wsa-green-dot);
+  --color-green-soft: var(--wsa-green-bg);
+  --color-grey-dot: var(--wsa-grey-dot);
   --color-grey-soft: var(--wsa-grey-bg);
-  --color-needs: var(--wsa-needs);
+  --color-star: var(--wsa-star);
   --color-focus: var(--wsa-focus);
-  --color-focus-soft: var(--wsa-focus-bg);
+  --color-purple: var(--wsa-purple);
+  --color-teal: var(--wsa-teal);
+
+  --shadow-card: var(--wsa-shadow);
+  --shadow-pop: var(--wsa-shadow-pop);
+  --ease-ios: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 :root {
-  --wsa-bg: #fff;
-  --wsa-surface: #f6f7f9;
+  --wsa-bg: #f5f5f7;
   --wsa-raise: #fff;
-  --wsa-border: #e3e6ea;
-  --wsa-text: #1b1f24;
-  --wsa-muted: #5b6470;
-  --wsa-red: #c62f2f;
-  --wsa-red-bg: #fdecec;
-  --wsa-amber: #a86500;
-  --wsa-amber-bg: #fff4e0;
-  --wsa-green: #1f7a3d;
-  --wsa-green-bg: #e8f5ec;
-  --wsa-blue: #2457c5;
-  --wsa-blue-bg: #e9effc;
-  --wsa-grey-bg: #eef0f3;
-  --wsa-needs: #7c3aed;
-  --wsa-focus: #d97706;
-  --wsa-focus-bg: #fef3c7;
+  --wsa-side: #ededf0;
+  --wsa-fill: rgba(120, 120, 128, 0.12);
+  --wsa-fill2: rgba(120, 120, 128, 0.07);
+  --wsa-thumb: #fff;
+  --wsa-sep: rgba(60, 60, 67, 0.13);
+  --wsa-sep-strong: rgba(60, 60, 67, 0.22);
+  --wsa-text: #1d1d1f;
+  --wsa-muted: #6e6e73;
+  --wsa-faint: #8e8e93;
+  --wsa-blue: #0071e3;
+  --wsa-blue-bg: rgba(0, 113, 227, 0.1);
+  --wsa-red: #d70015;
+  --wsa-red-dot: #ff3b30;
+  --wsa-red-bg: rgba(255, 59, 48, 0.12);
+  --wsa-amber: #946c00;
+  --wsa-amber-dot: #ffcc00;
+  --wsa-amber-bg: rgba(255, 204, 0, 0.16);
+  --wsa-green: #248a3d;
+  --wsa-green-dot: #34c759;
+  --wsa-green-bg: rgba(52, 199, 89, 0.13);
+  --wsa-grey-dot: #aeaeb2;
+  --wsa-grey-bg: rgba(120, 120, 128, 0.12);
+  --wsa-star: #f5a623;
+  --wsa-focus: #946c00;
+  --wsa-purple: #af52de;
+  --wsa-teal: #30b0c7;
+  --wsa-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 4px 14px rgba(0, 0, 0, 0.05);
+  --wsa-shadow-pop: 0 10px 30px rgba(0, 0, 0, 0.25);
+  /* A workstream's tile colour, picked by its ref. */
+  --wsa-accent-0: #5e5ce6;
+  --wsa-accent-1: #ff9500;
+  --wsa-accent-2: #30b0c7;
+  --wsa-accent-3: #34c759;
+  --wsa-accent-4: #007aff;
+  --wsa-accent-5: #ff2d55;
+  --wsa-accent-6: #af52de;
+  --wsa-accent-7: #a2845e;
+  --wsa-accent-none: #8e8e93;
+  color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --wsa-bg: #14171b;
-    --wsa-surface: #1c2026;
-    --wsa-raise: #20252c;
-    --wsa-border: #2c323a;
-    --wsa-text: #e6e9ed;
-    --wsa-muted: #9aa3ae;
-    --wsa-red: #ff7b7b;
-    --wsa-red-bg: #3a1c1e;
-    --wsa-amber: #f2b45a;
-    --wsa-amber-bg: #372a14;
-    --wsa-green: #6fd08f;
-    --wsa-green-bg: #16301f;
-    --wsa-blue: #8fb1ff;
-    --wsa-blue-bg: #1b2640;
-    --wsa-grey-bg: #262b32;
-    --wsa-needs: #8b5cf6;
-    --wsa-focus: #f2b45a;
-    --wsa-focus-bg: #3a2c10;
+    --wsa-bg: #000;
+    --wsa-raise: #1c1c1e;
+    --wsa-side: #151517;
+    --wsa-fill: rgba(118, 118, 128, 0.24);
+    --wsa-fill2: rgba(118, 118, 128, 0.14);
+    --wsa-thumb: #636366;
+    --wsa-sep: rgba(84, 84, 88, 0.5);
+    --wsa-sep-strong: rgba(84, 84, 88, 0.8);
+    --wsa-text: #f5f5f7;
+    --wsa-muted: #a1a1a6;
+    --wsa-faint: #76767c;
+    --wsa-blue: #0a84ff;
+    --wsa-blue-bg: rgba(10, 132, 255, 0.18);
+    --wsa-red: #ff453a;
+    --wsa-red-dot: #ff453a;
+    --wsa-red-bg: rgba(255, 69, 58, 0.18);
+    --wsa-amber: #ffd60a;
+    --wsa-amber-dot: #ffd60a;
+    --wsa-amber-bg: rgba(255, 214, 10, 0.16);
+    --wsa-green: #30d158;
+    --wsa-green-dot: #30d158;
+    --wsa-green-bg: rgba(48, 209, 88, 0.16);
+    --wsa-grey-dot: #636366;
+    --wsa-grey-bg: rgba(118, 118, 128, 0.24);
+    --wsa-star: #ffd60a;
+    --wsa-focus: #ffd60a;
+    --wsa-shadow: 0 0 0 1px rgba(255, 255, 255, 0.05);
+    --wsa-shadow-pop: 0 10px 30px rgba(0, 0, 0, 0.6);
+    --wsa-accent-none: #636366;
+    color-scheme: dark;
   }
 }
 
 @layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
   body {
-    @apply m-0 bg-page font-sans text-[14px] leading-normal text-ink;
+    @apply m-0 bg-page font-sans text-[15px] leading-[1.47] tracking-[-0.01em] text-ink antialiased;
   }
   a {
     @apply text-blue no-underline hover:underline;
   }
+  button {
+    font: inherit;
+    color: inherit;
+  }
+  :focus-visible {
+    outline: 3px solid color-mix(in srgb, var(--wsa-blue) 55%, transparent);
+    outline-offset: 2px;
+  }
   summary::-webkit-details-marker {
     display: none;
+  }
+}
+
+/* Motion, from the design: sections rise in one after another, a check pops, a debrief slides away. */
+@keyframes wsa-rise {
+  from {
+    opacity: 0;
+    translate: 0 8px;
+  }
+}
+@keyframes wsa-in-r {
+  from {
+    opacity: 0;
+    translate: 40px 0;
+  }
+}
+@keyframes wsa-in-l {
+  from {
+    opacity: 0;
+    translate: -24px 0;
+  }
+}
+@keyframes wsa-ring {
+  from {
+    opacity: 0.55;
+    scale: 1;
+  }
+  to {
+    opacity: 0;
+    scale: 1.9;
+  }
+}
+@keyframes wsa-star {
+  40% {
+    scale: 1.4;
+    rotate: -12deg;
+  }
+}
+@keyframes wsa-spin {
+  to {
+    rotate: 360deg;
+  }
+}
+@keyframes wsa-pulse {
+  70% {
+    box-shadow: 0 0 0 6px transparent;
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+@utility rise {
+  animation: wsa-rise 0.5s var(--ease-ios) backwards;
+  animation-delay: calc(var(--i, 0) * 40ms);
+}
+@utility push-in {
+  animation: wsa-in-r 0.4s var(--ease-ios);
+}
+@utility pop-back {
+  animation: wsa-in-l 0.4s var(--ease-ios);
+}
+@utility live-dot {
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--wsa-green-dot) 60%, transparent);
+  animation: wsa-pulse 2.4s infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0s !important;
+    transition-duration: 0.01ms !important;
   }
 }

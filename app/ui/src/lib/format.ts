@@ -34,3 +34,31 @@ export function ago(ts: string | null | undefined, now = Date.now()): string {
 }
 
 export const plural = (n: number, word: string, many = word + 's') => `${n} ${n === 1 ? word : many}`;
+
+const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+
+/** Days from today to a timestamp's day, in the viewer's calendar: 0 today, -1 yesterday. */
+export const dayOffset = (ts: string, now = new Date()) => Math.round((startOfDay(new Date(ts)) - startOfDay(now)) / 864e5);
+
+/** "20 Nov" */
+export const shortDate = (ts: string) => new Date(ts).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+
+/** A timeline day's heading: Today, Yesterday, the weekday within the last week, else the date. */
+export function dayLabel(ts: string, now = new Date()): string {
+  const n = dayOffset(ts, now);
+  if (n === 0) return 'Today';
+  if (n === -1) return 'Yesterday';
+  if (n > -7 && n < 0) return new Date(ts).toLocaleDateString('en-GB', { weekday: 'long' });
+  return new Date(ts).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+}
+
+/** A due date the short way: Overdue, Due today, Due tomorrow, Due Friday, Due 7 Dec. */
+export function dueShort(due: string, now = new Date()): string {
+  const n = daysLeft(due, now);
+  if (n < 0) return 'Overdue';
+  if (n === 0) return 'Due today';
+  if (n === 1) return 'Due tomorrow';
+  const d = new Date(due.slice(0, 10) + 'T12:00:00');
+  if (n < 7) return `Due ${d.toLocaleDateString('en-GB', { weekday: 'long' })}`;
+  return `Due ${d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}`;
+}

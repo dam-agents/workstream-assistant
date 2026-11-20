@@ -63,3 +63,34 @@ export function parseKeyPoints(text: string): { label?: string; text: string }[]
       return rest.length && head.length < 20 ? { label: head, text: rest.join(': ') } : { text: p };
     });
 }
+
+/** A workstream's tile colour: one of eight accents, fixed by its permanent ref. */
+export const accentOf = (ref: number | null | undefined) =>
+  ref ? `var(--wsa-accent-${ref % 8})` : 'var(--wsa-accent-none)';
+
+/** "Jan: release cut · Jenna: IBM sign-off" → the people, in order. */
+export function parseRoles(roles: string | null | undefined): { name: string; role: string }[] {
+  if (!roles) return [];
+  return roles
+    .split(/\s+·\s+|\n|;\s*/)
+    .map((r) => r.trim())
+    .filter(Boolean)
+    .map((r) => {
+      const i = r.indexOf(':');
+      return i > 0 ? { name: r.slice(0, i).trim(), role: r.slice(i + 1).trim() } : { name: r, role: '' };
+    });
+}
+
+/** "Jenna Winkler" → "JW"; "Tomáš P." → "TP". */
+export const initials = (name: string) =>
+  name
+    .replace(/\(.*?\)/g, '')
+    .split(/\s+/)
+    .filter((p) => /^\p{L}/u.test(p))
+    .slice(0, 2)
+    .map((p) => p[0].toUpperCase())
+    .join('') || '?';
+
+/** The refs a debrief says it touches, "W8, W15" → [8, 15]. */
+export const refsIn = (text: string | null | undefined): number[] =>
+  [...(text ?? '').matchAll(/W(\d+)/g)].map((m) => Number(m[1]));
