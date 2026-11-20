@@ -47,11 +47,12 @@ The artifact is "Workstreams", interactive and private. Keep its id in memory.
 
 ```
 src/
+  App.tsx     the split view: the list beside the open pane, the toast, the banners
   api/        types.ts (the shapes the API returns), platform.ts (the host's platform object), client.ts (every endpoint, errors, the snapshot)
   lib/        pure logic, unit-tested: dates (format.ts), priority groups and key points (workstreams.ts), links (links.ts)
   state/      AppContext (route, live, notices, owner), useViewData (load live, else the snapshot), useAction / usePrompt
-  components/ shared pieces: ui.tsx (Pill, Button, ItemText, …), Rows.tsx (follow-up, deadline, prebrief rows), PriorityControl
-  features/   dashboard/ and workstream/: one file per section
+  components/ shared pieces: ui.tsx (Tile, Pill, Card, Seg, Check, Button, ItemText, …), icons.tsx, Pane.tsx (a pane's frame and header), Rows.tsx (to-do, deadline, prebrief rows)
+  features/   sidebar/ (the list, its lanes and drag & drop), panes/ (Debriefs, Coming up, Follow-ups, Suggested), workstream/ (a workstream's page)
   styles.css  Tailwind, and the design tokens (light and dark) as theme colours: bg-surface, text-muted, border-line, text-needs…
 test/         Vitest: lib.test.ts (logic), app.test.tsx (the app against a stand-in platform)
 ```
@@ -67,4 +68,5 @@ test/         Vitest: lib.test.ts (logic), app.test.tsx (the app against a stand
 - No `alert`, `confirm` or `prompt`. They're blocked too. Confirm inline.
 - `platform.request` only works in the docked preview beside the chat, on the latest version.
 - Test UI changes with `npm run check`, and look at the built page with a stand-in for `platform.request` (as `test/app.test.tsx` and `src/dev.ts` do) before publishing.
-- Keep the dashboard minimal: no stat boxes, item tables or long context sections.
+- The layout follows the page's own width, not the window's (`App.tsx`): under 640px the list and the open pane are two screens; the workstream page puts the timeline beside its cards from 760px of pane width (a container query).
+- Keep the list minimal: no stat boxes, item tables or long context sections.

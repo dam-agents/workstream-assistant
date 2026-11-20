@@ -2,7 +2,11 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
 import { readSnapshot } from '../api/client';
 
-export type Route = { view: 'dash' } | { view: 'ws'; id: string };
+/** What the main pane shows. `dash` is "nothing picked": the list alone on a narrow pane, a default pick on a wide one. */
+export type InboxTab = 'debriefs' | 'followups' | 'coming' | 'suggested';
+export type Route = { view: 'dash' } | { view: 'ws'; id: string } | { view: 'inbox'; tab: InboxTab };
+
+export const routeKey = (r: Route) => (r.view === 'ws' ? `ws:${r.id}` : r.view === 'inbox' ? `inbox:${r.tab}` : r.view);
 
 export type NoticeKind = 'warn' | 'err' | 'ok';
 export interface Notice {
@@ -28,6 +32,9 @@ interface AppState {
   /** The dashboard's Low priority group is open; kept while the owner visits a workstream and comes back. */
   lowOpen: boolean;
   setLowOpen(open: boolean): void;
+  /** The pane is too narrow for the list and the open pane side by side: they become two screens. */
+  narrow: boolean;
+  setNarrow(narrow: boolean): void;
 }
 
 const Ctx = createContext<AppState | null>(null);
@@ -39,12 +46,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [notice, setNotice] = useState<Notice | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
   const [lowOpen, setLowOpen] = useState(false);
+  const [narrow, setNarrow] = useState(false);
   const [owner, setOwnerState] = useState({ me: snap?.summary.me ?? '', repo: snap?.summary.github_repo ?? '' });
 
   const navigate = useCallback((r: Route) => {
     setNotice(null);
     setRoute(r);
-    window.scrollTo(0, 0);
   }, []);
   const notify = useCallback((kind: NoticeKind, text: string) => setNotice({ kind, text }), []);
   const clearNotice = useCallback(() => setNotice(null), []);
@@ -55,8 +62,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
 
   const value = useMemo<AppState>(
-    () => ({ route, navigate, live, setLive, notice, notify, clearNotice, reloadKey, reload, ...owner, setOwner, lowOpen, setLowOpen }),
-    [route, navigate, live, notice, notify, clearNotice, reloadKey, reload, owner, setOwner, lowOpen],
+    () => ({ route, navigate, live, setLive, notice, notify, clearNotice, reloadKey, reload, ...owner, setOwner, lowOpen, setLowOpen, narrow, setNarrow }),
+    [route, navigate, live, notice, notify, clearNotice, reloadKey, reload, owner, setOwner, lowOpen, narrow],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

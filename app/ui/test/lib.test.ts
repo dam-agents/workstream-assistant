@@ -88,3 +88,31 @@ describe('text', () => {
     expect(sourceKind(null)).toBe('');
   });
 });
+
+describe('split view helpers', () => {
+  it('labels timeline days and short due dates', async () => {
+    const { dayLabel, dueShort } = await import('../src/lib/format');
+    expect(dayLabel('2026-11-11T08:00:00', NOW)).toBe('Today');
+    expect(dayLabel('2026-11-10T20:00:00', NOW)).toBe('Yesterday');
+    expect(dayLabel('2026-11-08T10:00:00', NOW)).toBe('Sunday');
+    expect(dueShort('2026-11-09', NOW)).toBe('Overdue');
+    expect(dueShort('2026-11-12', NOW)).toBe('Due tomorrow');
+    expect(dueShort('2026-11-13', NOW)).toBe('Due Friday');
+    expect(dueShort('2026-12-07', NOW)).toBe('Due 7 Dec');
+  });
+  it('reads people from roles, refs from a debrief, initials from names', async () => {
+    const { parseRoles, refsIn, initials, accentOf } = await import('../src/lib/workstreams');
+    expect(parseRoles('Jan Pokorný: release cut · Jenna Winkler: IBM sign-off')).toEqual([
+      { name: 'Jan Pokorný', role: 'release cut' },
+      { name: 'Jenna Winkler', role: 'IBM sign-off' },
+    ]);
+    expect(refsIn('W8, W15')).toEqual([8, 15]);
+    expect(initials('Tomáš P.')).toBe('TP');
+    expect(accentOf(3)).toBe(accentOf(11));
+  });
+  it('says what a timeline is made of', async () => {
+    const { madeOf } = await import('../src/features/workstream/ProgressTimeline');
+    const e = (type: string) => ({ id: 0, ts: '', type, outcome: 'info' as const, summary: '', url: null });
+    expect(madeOf([e('message'), e('message'), e('pr'), e('meeting')])).toBe('From 2 messages, 1 PR and 1 meeting');
+  });
+});

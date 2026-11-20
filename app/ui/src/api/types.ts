@@ -81,6 +81,8 @@ interface WorkstreamBase {
   name: string;
   goal: string;
   owner: string;
+  /** "Jan: release cut · Jenna: IBM sign-off": who else is in it. */
+  roles?: string;
   tldr: string;
   status: Status;
   priority: Priority;

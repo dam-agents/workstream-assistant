@@ -110,15 +110,17 @@ The `db.py` helpers print a warning when an item has no link. Fix it before fini
 
 **Keep it short.** Report only what matters, and lead with the TL;DR.
 
-- **Dashboard:** a "N things need you" line, then **Coming up** (the important deadlines), then one row per workstream: Needs-you badge, status, next deadline, name, one-line note, owner, last activity, a Today toggle, **Detail →**. The rows are stacked in four lanes: **Focus today**, **High**, **Normal**, then **Low** (collapsed). The owner reprioritises by dragging a row by its handle into another lane, and reorders a lane by dragging within it; that order is theirs (`rank`) and I keep it. Rows they haven't placed follow, those that need the owner first. Then loose **Follow-ups**, then **Suggested workstreams**. Nothing else.
-- **Workstream page:**
-  - **Needs you**: the open asks, each with a Done button (only when there are any).
-  - **TL;DR**: 2–3 sentences on where it stands toward the goal.
+The app is one **split view**: the list on the left, the open item beside it. Docked beside the chat or full screen they sit side by side; dragged narrow, they become two screens with a back link.
+
+- **The list (sidebar):** only the workstreams, as clean as possible. A search, then one row per workstream: its coloured `W3` tile, the full name, the Needs-you count, and one quiet line with the status and the next deadline. The rows are stacked in four lanes: **Focus today**, **High priority**, **Other** (normal), then **Low priority** (collapsed); an empty lane shows only while dragging. The owner reprioritises by dragging a row into another lane, and reorders a lane by dragging within it; that order is theirs (`rank`) and I keep it. Rows they haven't placed follow, those that need the owner first. Nothing else.
+- **The bar above the pane**, always in the same place whichever workstream is open (below the search on a narrow pane): a count for each list that has something in it, each opening that list in the pane. **Debriefs** (meetings to talk through), **Follow-ups** (loose ones; blue when one waits on the owner), **Coming up** (the important deadlines; blue when one is overdue) and **Suggested** workstreams to approve or reject. With nothing picked, a wide pane opens the first of them that has something.
+- **Workstream page:** status, last update, name, owner and the people from `roles`; **Focus today**, the High / Normal / Low picker and **Ask agent** (a refresh of this workstream, in a session of its own). Then:
+  - **To talk through**: the proposed debriefs that touch it (only when there are any).
+  - **To-dos**: **Needs you** (its open asks, and follow-ups waiting on the owner), **Others** (follow-ups waiting on someone else), **All**. Each has a round Done check; asks also have **Work on it**.
   - **Deadlines**: its open deadlines, soonest first (only when there are any).
-  - **Key points**: at most ~5 bullets, `Label: text` (Blocker, On you, Next, Done when…). `#123` becomes a link to `github_repo`.
-  - **Follow-ups** tied to it (only when there are any).
+  - **Summary**: the TL;DR, 2–3 sentences on where it stands toward the goal, then the key points: at most ~5 bullets, `Label: text` (Blocker, On you, Next, Done when…). `#123` becomes a link to `github_repo`.
   - **Prebriefs**: open prebriefs for upcoming calls, and a **Prebrief a call** button.
-  - **Progress**: the timeline, newest first.
+  - **Timeline**, beside the cards when there's room: the progress, newest first, grouped by day, a coloured dot per kind (meeting, message, PR, release…) or outcome (done, risk, blocked).
   - Goal and decisions, collapsed at the bottom.
 - TL;DR, key points and status note are **text I write**. Rewrite them on every refresh; they don't update themselves.
 

@@ -8,10 +8,23 @@ New entries go under **Unreleased** in the pull request that makes the change (s
 
 ## Unreleased
 
+### The Workstreams app is a split view
+
+- The dashboard and the workstream pages became one **split view**: the list of workstreams on the left, the open one beside it. Docked beside the chat both fit; dragged narrow, they become two screens with a back link. A calmer look throughout: grey page, white cards, one accent blue, a coloured `W3` tile per workstream, light and dark.
+- The list shows only the workstreams: the full name, the Needs-you count, and one quiet line with status and next deadline. It keeps the four lanes (Focus today, High priority, Other, Low priority) and the dragging between them, without a handle: drag the row itself.
+- Everything else is behind a bar above the pane, always in the same place: **Debriefs**, loose **Follow-ups**, **Coming up** and **Suggested**, each with its count, each opening its list in the pane.
+- Only the main action in each place is a button; secondary actions (Dismiss, Preview, Reject, Cancel, Work on it…) are links.
+- A workstream page has **To talk through** (its debriefs), **To-dos** split into **Needs you** and **Others** with a round Done check, **Deadlines**, a **Summary** (TL;DR and key points), **Prebriefs** and a **Timeline** grouped by day. **Focus today**, the priority picker and **Ask agent** sit in its header.
+- Notices show as a short toast instead of a line at the top.
+- Nothing in the data changed.
+
+**After updating:** republish the app.
+
 ### Debrief, Prebrief and Work on it start a session of their own
 
 - **Debrief**, **Prebrief a call**, opening a prebrief and **Work on it** on an ask no longer drop their prompt into whatever chat is open: each starts a new session of its own on the platform, so the conversation about that meeting, call or ask stays apart. Clicking the same one again (Debrief again, the same prebrief, the same ask) continues its session. **Prebrief a call** opens a fresh one each time.
-- **Ask agent to refresh** and **Ask agent to republish** still go into the open chat, and now also work when the page is opened outside it, e.g. from the library.
+- **Ask agent to refresh**, on the dashboard and on a workstream page, starts a new session of its own too, a fresh one on every click, so the sweep doesn't land in the middle of the open chat.
+- **Ask agent to republish** still goes into the open chat, and now also works when the page is opened outside it, e.g. from the library.
 - Sessions started this way run unattended: a tool call that needs your permission is refused there.
 
 **After updating:** republish the app.
