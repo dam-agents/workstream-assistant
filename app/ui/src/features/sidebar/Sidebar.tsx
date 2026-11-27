@@ -296,7 +296,7 @@ export function Sidebar({ s, selected, conn, onRefresh, onReload, below }: { s: 
   const [query, setQuery] = useState('');
   const [spin, setSpin] = useState(0);
   const scroller = useRef<HTMLDivElement>(null);
-  const connLabel = conn.state === 'live' ? 'Live' : conn.state === 'snapshot' ? 'Snapshot' : 'Loading…';
+  const connLabel = conn.state === 'live' ? 'Live' : conn.state === 'snapshot' ? 'Snapshot' : s ? 'Updating…' : 'Loading…';
 
   return (
     <aside className="flex min-h-0 min-w-0 flex-col" aria-label="Your Work">

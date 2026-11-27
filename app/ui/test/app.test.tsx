@@ -131,6 +131,26 @@ it('falls back to the snapshot without platform', async () => {
   expect(screen.getByText(/only in the docked preview/)).toBeTruthy();
 });
 
+it('shows the snapshot at once while the first live answer is on its way', async () => {
+  const el = document.createElement('script');
+  el.id = 'snapshot';
+  el.type = 'application/json';
+  el.textContent = JSON.stringify({ summary: summary([ws({ id: 'From snapshot' })]), workstreams: {} });
+  document.body.appendChild(el);
+  globalThis.platform = { request: vi.fn(() => new Promise<never>(() => {})), sendPrompt: vi.fn() }; // never answers
+  try {
+    render(
+      <AppProvider>
+        <App />
+      </AppProvider>,
+    );
+    expect(await screen.findByText('From snapshot')).toBeTruthy();
+    expect(screen.getByText('Updating…')).toBeTruthy();
+  } finally {
+    el.remove();
+  }
+});
+
 it('"Work on it" sends the ask, with the owner\'s extra context, into a session of its own', async () => {
   const data = summary([ws({ id: 'a', ref: 3, name: 'Release', asks_open: 1 })]);
   mockPlatform(data, {
