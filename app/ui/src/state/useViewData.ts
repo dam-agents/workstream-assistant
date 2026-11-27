@@ -26,23 +26,33 @@ const REFRESH_ON_FOCUS_MS = 30_000;
 export function useViewData(wsId: string | null): ViewData {
   const { reloadKey, reload, live, setLive, setOwner } = useApp();
   const snap = useMemo(readSnapshot, []);
-  const [summary, setSummary] = useState<Summary | null>(null);
-  const [ws, setWs] = useState<Workstream | null>(null);
+  // Until the first live answer, show the embedded snapshot rather than an empty page: the platform can take
+  // a while to relay the first request (longer when it has to wake the agent).
+  const [summary, setSummary] = useState<Summary | null>(() => snap?.summary ?? null);
+  const [ws, setWs] = useState<Workstream | null>(() => (wsId ? (snap?.workstreams[wsId] ?? null) : null));
   const [conn, setConn] = useState<Connection>({ state: 'loading', stale: false });
   const lastLoad = useRef(0);
   const shown = useRef<string | null | undefined>(undefined);
+  const liveRef = useRef(live);
+  liveRef.current = live;
 
   const load = useCallback(
     async (id: string | null, signal: { cancelled: boolean }) => {
       lastLoad.current = Date.now();
       setConn((c) => ({ ...c, state: 'loading' }));
       try {
-        const [s, w] = await Promise.all([api.summary(), id ? api.workstream(id) : Promise.resolve(null)]);
+        // The open workstream is shown as soon as it arrives, without waiting for the summary.
+        const wsLoad = id
+          ? api.workstream(id).then((w) => {
+              if (!signal.cancelled) setWs(w);
+            })
+          : Promise.resolve();
+        const [s] = await Promise.all([api.summary(), wsLoad]);
         if (signal.cancelled) return;
         setOwner(s.me, s.github_repo);
         setLive(true);
         setSummary(s);
-        setWs(w);
+        if (!id) setWs(null);
         setConn({ state: 'live', stale: !!s.app_version && s.app_version !== PAGE_VERSION });
       } catch (err) {
         if (signal.cancelled) return;
@@ -57,14 +67,16 @@ export function useViewData(wsId: string | null): ViewData {
   );
 
   useEffect(() => {
-    if (shown.current !== wsId && wsId) setWs(null); // another workstream: show Loading, not the previous one
+    // Another workstream: never show the previous one while it loads. Before the first live answer,
+    // show its snapshot copy; once live, show Loading rather than week-old data.
+    if (shown.current !== undefined && shown.current !== wsId && wsId) setWs(liveRef.current ? null : (snap?.workstreams[wsId] ?? null));
     shown.current = wsId;
     const signal = { cancelled: false };
     void load(wsId, signal);
     return () => {
       signal.cancelled = true;
     };
-  }, [wsId, reloadKey, load]);
+  }, [wsId, reloadKey, load, snap]);
 
   useEffect(() => {
     const onFocus = () => {

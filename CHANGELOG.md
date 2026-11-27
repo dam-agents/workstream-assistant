@@ -8,6 +8,12 @@ New entries go under **Unreleased** in the pull request that makes the change (s
 
 ## Unreleased
 
+### The app opens at once
+
+- The app no longer sits on "Loading…" while the platform delivers its first request (slow when it has to wake the agent). It shows the copy built into the page straight away, with **Updating…** in the list, and swaps in live data when it arrives. An open workstream shows as soon as its own data comes back, without waiting for the rest.
+
+**After updating:** republish the app.
+
 ### The Workstreams app is a split view
 
 - The dashboard and the workstream pages became one **split view**: the list of workstreams on the left, the open one beside it. Docked beside the chat both fit; dragged narrow, they become two screens with a back link. A calmer look throughout: grey page, white cards, one accent blue, a coloured `W3` tile per workstream, light and dark.
